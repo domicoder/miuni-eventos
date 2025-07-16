@@ -18,6 +18,7 @@ import androidx.navigation.navArgument
 import com.domicoder.miunieventos.ui.components.BottomNavigation
 import com.domicoder.miunieventos.ui.discover.DiscoverScreen
 import com.domicoder.miunieventos.ui.eventdetail.EventDetailScreen
+import com.domicoder.miunieventos.ui.maps.MapsScreen
 import com.domicoder.miunieventos.ui.myevents.MyEventsScreen
 import com.domicoder.miunieventos.ui.profile.ProfileScreen
 import com.domicoder.miunieventos.ui.scanner.ScannerScreen
@@ -37,6 +38,7 @@ fun AppNavigation(
         when {
             currentRoute == NavRoutes.Discover.route -> true
             currentRoute == NavRoutes.MyEvents.route -> true
+            currentRoute == NavRoutes.Maps.route -> true
             currentRoute == NavRoutes.ScanQR.route -> true
             currentRoute == NavRoutes.Profile.route -> true
             else -> false
@@ -68,6 +70,10 @@ fun AppNavigation(
             
             composable(NavRoutes.ScanQR.route) {
                 ScannerScreen()
+            }
+            
+            composable(NavRoutes.Maps.route) {
+                MapsScreen(navController = navController)
             }
             
             composable(NavRoutes.Profile.route) {

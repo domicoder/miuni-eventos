@@ -12,6 +12,7 @@ data class Event(
     val description: String,
     val imageUrl: String?,
     val location: String,
+    val locationId: String? = null,
     val latitude: Double?,
     val longitude: Double?,
     val startDateTime: LocalDateTime,

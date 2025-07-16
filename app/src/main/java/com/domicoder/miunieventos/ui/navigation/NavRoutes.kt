@@ -4,6 +4,7 @@ sealed class NavRoutes(val route: String) {
     object Discover : NavRoutes("discover")
     object MyEvents : NavRoutes("my_events")
     object ScanQR : NavRoutes("scan_qr")
+    object Maps : NavRoutes("maps")
     object EventDetail : NavRoutes("event_detail/{eventId}") {
         fun createRoute(eventId: String) = "event_detail/$eventId"
     }

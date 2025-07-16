@@ -1,0 +1,78 @@
+<resources>
+    <string name="app_name">MiUNIEventos</string>
+    
+    <!-- Bottom Navigation -->
+    <string name="discover">Descubrir</string>
+    <string name="my_events">Mis Eventos</string>
+    <string name="scan_qr">Escanear QR</string>
+    <string name="profile">Perfil</string>
+    
+    <!-- Event Categories -->
+    <string name="category_academic">Académico</string>
+    <string name="category_cultural">Cultural</string>
+    <string name="category_sports">Deportivo</string>
+    <string name="category_social">Social</string>
+    <string name="category_workshop">Taller</string>
+    <string name="category_conference">Conferencia</string>
+    <string name="category_other">Otro</string>
+    
+    <!-- Event Details -->
+    <string name="event_details">Detalles del Evento</string>
+    <string name="event_description">Descripción</string>
+    <string name="event_location">Ubicación</string>
+    <string name="event_date">Fecha</string>
+    <string name="event_time">Hora</string>
+    <string name="event_organizer">Organizador</string>
+    <string name="event_department">Departamento</string>
+    <string name="event_category">Categoría</string>
+    <string name="event_rsvp">Confirmar Asistencia</string>
+    <string name="event_rsvp_going">Asistiré</string>
+    <string name="event_rsvp_maybe">Tal vez</string>
+    <string name="event_rsvp_not_going">No asistiré</string>
+    <string name="event_add_to_calendar">Añadir al Calendario</string>
+    <string name="event_share">Compartir</string>
+    
+    <!-- Authentication -->
+    <string name="login">Iniciar Sesión</string>
+    <string name="register">Registrarse</string>
+    <string name="email">Correo Electrónico</string>
+    <string name="password">Contraseña</string>
+    <string name="name">Nombre</string>
+    <string name="department">Departamento</string>
+    <string name="forgot_password">¿Olvidaste tu contraseña?</string>
+    <string name="no_account">¿No tienes una cuenta?</string>
+    <string name="already_have_account">¿Ya tienes una cuenta?</string>
+    
+    <!-- Create/Edit Event -->
+    <string name="create_event">Crear Evento</string>
+    <string name="edit_event">Editar Evento</string>
+    <string name="event_title">Título del Evento</string>
+    <string name="event_image">Imagen del Evento</string>
+    <string name="event_start_date">Fecha de Inicio</string>
+    <string name="event_end_date">Fecha de Finalización</string>
+    <string name="event_start_time">Hora de Inicio</string>
+    <string name="event_end_time">Hora de Finalización</string>
+    <string name="save">Guardar</string>
+    <string name="cancel">Cancelar</string>
+    
+    <!-- Profile -->
+    <string name="edit_profile">Editar Perfil</string>
+    <string name="logout">Cerrar Sesión</string>
+    <string name="my_organized_events">Mis Eventos Organizados</string>
+    <string name="my_rsvps">Mis Confirmaciones</string>
+    
+    <!-- QR Scanner -->
+    <string name="scan_attendee_qr">Escanear QR de Asistente</string>
+    <string name="attendee_checked_in">Asistente registrado correctamente</string>
+    <string name="invalid_qr">QR inválido</string>
+    
+    <!-- General -->
+    <string name="loading">Cargando…</string>
+    <string name="error">Error</string>
+    <string name="retry">Reintentar</string>
+    <string name="no_events_found">No se encontraron eventos</string>
+    <string name="no_rsvps_found">No has confirmado asistencia a ningún evento</string>
+    <string name="search">Buscar</string>
+    <string name="filter">Filtrar</string>
+    <string name="sort">Ordenar</string>
+</resources>

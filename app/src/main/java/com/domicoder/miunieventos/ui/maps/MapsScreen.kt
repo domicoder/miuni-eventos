@@ -43,9 +43,7 @@ fun MapsScreen(
 ) {
     val events by viewModel.events.collectAsState()
     val context = LocalContext.current
-    
-    // Default camera position (you can set this to your university's location)
-    val defaultLocation = LatLng(19.4326, -99.1332) // Mexico City coordinates
+    val defaultLocation = LatLng(18.45633857179163, -69.92436293569348) 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(defaultLocation, 12f)
     }

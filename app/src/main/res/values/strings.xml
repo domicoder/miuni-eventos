@@ -4,6 +4,7 @@
     <!-- Bottom Navigation -->
     <string name="discover">Descubrir</string>
     <string name="my_events">Mis Eventos</string>
+    <string name="maps">Mapa</string>
     <string name="scan_qr">Escanear QR</string>
     <string name="profile">Perfil</string>
     

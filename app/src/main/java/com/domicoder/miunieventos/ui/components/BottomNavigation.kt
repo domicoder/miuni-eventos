@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -37,6 +38,11 @@ fun BottomNavigation(
             route = NavRoutes.MyEvents.route,
             iconVector = Icons.Default.Event,
             stringResourceId = R.string.my_events
+        ),
+        BottomNavItem(
+            route = NavRoutes.Maps.route,
+            iconVector = Icons.Default.LocationOn,
+            stringResourceId = R.string.maps
         ),
         if (isOrganizer) {
             BottomNavItem(

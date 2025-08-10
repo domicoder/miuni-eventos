@@ -25,7 +25,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
@@ -38,9 +37,9 @@ fun ProfileScreen(
 ) {
     // In a real app, this would come from a user repository or authentication service
     val userPhotoUrl = "https://i.pravatar.cc/300"
-    val userName = "Juan Pérez"
-    val userEmail = "juan.perez@universidad.edu"
-    val userDepartment = "Ingeniería Informática"
+    val userName = "Juanito Alimaña"
+    val userEmail = "juanito.alimana@unicda.edu.do"
+    val userDepartment = "Ingeniería Software"
     val isOrganizer = true
     
     Column(

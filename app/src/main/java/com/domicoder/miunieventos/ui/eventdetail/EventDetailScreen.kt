@@ -48,6 +48,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.domicoder.miunieventos.R
 import com.domicoder.miunieventos.data.model.RSVPStatus
+import com.domicoder.miunieventos.ui.components.SingleEventMap
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -187,6 +188,26 @@ fun EventDetailScreen(
                             }
                             
                             Spacer(modifier = Modifier.height(12.dp))
+                            
+                            // Map (if event has coordinates)
+                            if (eventData.latitude != null && eventData.longitude != null) {
+                                Text(
+                                    text = "Ubicación en el mapa",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                
+                                Spacer(modifier = Modifier.height(8.dp))
+                                
+                                SingleEventMap(
+                                    event = eventData,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp)
+                                )
+                                
+                                Spacer(modifier = Modifier.height(12.dp))
+                            }
                             
                             // Organizer
                             Row(verticalAlignment = Alignment.CenterVertically) {

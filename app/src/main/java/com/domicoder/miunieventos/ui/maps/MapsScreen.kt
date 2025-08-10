@@ -3,6 +3,8 @@ package com.domicoder.miunieventos.ui.maps
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.MyLocation
@@ -13,6 +15,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -27,6 +31,8 @@ import androidx.navigation.NavController
 import com.domicoder.miunieventos.data.model.Event
 import com.domicoder.miunieventos.ui.components.EventMap
 import com.domicoder.miunieventos.ui.navigation.NavRoutes
+import com.domicoder.miunieventos.util.PermissionHandler
+import com.domicoder.miunieventos.util.rememberLocationPermissionState
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
@@ -48,10 +54,15 @@ fun MapsScreen(
         position = CameraPosition.fromLatLngZoom(defaultLocation, 12f)
     }
     
+    // Handle location permissions
+    val (hasLocationPermission, requestLocationPermission) = rememberLocationPermissionState()
+    val currentHasPermission = PermissionHandler.hasLocationPermission(context)
+    var showPermissionDialog by remember { mutableStateOf(false) }
+    
     var mapProperties by remember {
         mutableStateOf(
             MapProperties(
-                isMyLocationEnabled = true
+                isMyLocationEnabled = currentHasPermission
             )
         )
     }
@@ -60,10 +71,29 @@ fun MapsScreen(
         mutableStateOf(
             MapUiSettings(
                 zoomControlsEnabled = true,
-                myLocationButtonEnabled = false,
+                myLocationButtonEnabled = currentHasPermission,
                 mapToolbarEnabled = true
             )
         )
+    }
+    
+    // Update map properties when permission changes
+    if (hasLocationPermission != currentHasPermission) {
+        mapProperties = mapProperties.copy(isMyLocationEnabled = hasLocationPermission)
+        mapUiSettings = mapUiSettings.copy(myLocationButtonEnabled = hasLocationPermission)
+    }
+    
+    // Ensure we don't enable location features without permission
+    val finalMapProperties = if (!currentHasPermission) {
+        mapProperties.copy(isMyLocationEnabled = false)
+    } else {
+        mapProperties
+    }
+    
+    val finalMapUiSettings = if (!currentHasPermission) {
+        mapUiSettings.copy(myLocationButtonEnabled = false)
+    } else {
+        mapUiSettings
     }
     
     Scaffold(
@@ -80,8 +110,12 @@ fun MapsScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    // Center map on user's location
-                    // This would require location permission handling
+                    if (currentHasPermission) {
+                        // Center map on user's location
+                        // TODO: Implement location centering logic
+                    } else {
+                        showPermissionDialog = true
+                    }
                 }
             ) {
                 Icon(Icons.Default.MyLocation, contentDescription = "My Location")
@@ -93,15 +127,43 @@ fun MapsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            EventMap(
+                        EventMap(
                 events = events,
                 onEventClick = { event ->
                     navController.navigate(NavRoutes.EventDetail.createRoute(event.id))
                 },
                 cameraPositionState = cameraPositionState,
-                mapProperties = mapProperties,
-                mapUiSettings = mapUiSettings
+                mapProperties = finalMapProperties,
+                mapUiSettings = finalMapUiSettings
             )
         }
+    }
+    
+    // Permission request dialog
+    if (showPermissionDialog) {
+        AlertDialog(
+            onDismissRequest = { showPermissionDialog = false },
+            title = { Text("Se requiere permiso de ubicación") },
+            text = { 
+                Text("Esta aplicación necesita permiso de ubicación para mostrar tu ubicación actual en el mapa y ayudarte a encontrar eventos cercanos.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showPermissionDialog = false
+                        requestLocationPermission()
+                    }
+                ) {
+                    Text("Conceder permiso")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { showPermissionDialog = false }
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 } 

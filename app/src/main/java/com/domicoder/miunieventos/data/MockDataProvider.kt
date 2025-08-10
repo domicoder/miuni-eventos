@@ -16,16 +16,16 @@ object MockDataProvider {
     val users = listOf(
         User(
             id = "user1",
-            name = "Juan Pérez",
-            email = "juan.perez@universidad.edu",
+            name = "Juanito Alimaña",
+            email = "juanito.alimana@unicda.edu.do",
             photoUrl = "https://i.pravatar.cc/300?u=user1",
-            department = "Ingeniería Informática",
+            department = "Ingeniería Software",
             isOrganizer = true
         ),
         User(
             id = "user2",
             name = "María González",
-            email = "maria.gonzalez@universidad.edu",
+            email = "maria.gonzalez@unicda.edu.do",
             photoUrl = "https://i.pravatar.cc/300?u=user2",
             department = "Ciencias Sociales",
             isOrganizer = true
@@ -33,7 +33,7 @@ object MockDataProvider {
         User(
             id = "user3",
             name = "Carlos Rodríguez",
-            email = "carlos.rodriguez@universidad.edu",
+            email = "carlos.rodriguez@unicda.edu.do",
             photoUrl = "https://i.pravatar.cc/300?u=user3",
             department = "Medicina",
             isOrganizer = false

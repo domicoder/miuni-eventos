@@ -121,6 +121,16 @@ The project uses the following key configurations:
 
 ## Development Notes
 
+### Location Permission Handling
+
+The app includes proper runtime permission handling for location access:
+
+-   **Permission Declaration**: Location permissions are declared in `AndroidManifest.xml`
+-   **Runtime Permission**: The app requests location permissions at runtime using `ActivityResultContracts.RequestMultiplePermissions`
+-   **Graceful Degradation**: If location permission is denied, the map still works but without user location features
+-   **User-Friendly Dialog**: A dialog explains why location permission is needed before requesting it
+-   **Permission State Management**: Uses `PermissionHandler` utility to check and manage permission states
+
 ### Build Configuration
 
 The project has been configured to work with modern Android development tools and avoids common build issues:

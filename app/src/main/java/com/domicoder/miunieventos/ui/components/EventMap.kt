@@ -66,7 +66,7 @@ fun SingleEventMap(
         return
     }
     
-    val eventPosition = LatLng(event.latitude!!, event.longitude!!)
+    val eventPosition = LatLng(event.latitude, event.longitude)
     val cameraPositionState = rememberCameraPositionState {
         position = com.google.android.gms.maps.model.CameraPosition.fromLatLngZoom(eventPosition, 15f)
     }

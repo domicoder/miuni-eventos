@@ -1,24 +1,42 @@
 package com.domicoder.miunieventos.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.domicoder.miunieventos.R
 import com.domicoder.miunieventos.ui.navigation.NavRoutes
 
 data class BottomNavItem(
     val route: String,
-    val iconVector: androidx.compose.ui.graphics.vector.ImageVector,
+    val iconVector: ImageVector,
     val stringResourceId: Int
 )
 
@@ -27,7 +45,7 @@ fun BottomNavigation(
     navController: NavController,
     isOrganizer: Boolean = false
 ) {
-    val items = listOf(
+    val items = listOfNotNull(
         BottomNavItem(
             route = NavRoutes.Discover.route,
             iconVector = Icons.Default.Explore,
@@ -37,6 +55,11 @@ fun BottomNavigation(
             route = NavRoutes.MyEvents.route,
             iconVector = Icons.Default.Event,
             stringResourceId = R.string.my_events
+        ),
+        BottomNavItem(
+            route = NavRoutes.Maps.route,
+            iconVector = Icons.Default.LocationOn,
+            stringResourceId = R.string.maps
         ),
         if (isOrganizer) {
             BottomNavItem(
@@ -50,7 +73,7 @@ fun BottomNavigation(
             iconVector = Icons.Default.AccountCircle,
             stringResourceId = R.string.profile
         )
-    ).filterNotNull()
+    )
     
     val navBackStackEntry = navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry.value?.destination?.route
@@ -58,8 +81,22 @@ fun BottomNavigation(
     NavigationBar {
         items.forEach { item ->
             NavigationBarItem(
-                icon = { Icon(item.iconVector, contentDescription = null) },
-                label = { Text(text = stringResource(id = item.stringResourceId)) },
+                icon = { 
+                    Icon(
+                        imageVector = item.iconVector, 
+                        contentDescription = stringResource(id = item.stringResourceId),
+                        modifier = Modifier.size(24.dp)
+                    ) 
+                },
+                label = {
+                    Text(
+                        text = stringResource(id = item.stringResourceId),
+                        textAlign = TextAlign.Center,
+                        fontSize = 11.sp,
+                        maxLines = 1,
+                        modifier = Modifier.padding(horizontal = 0.dp)
+                    ) 
+                },
                 selected = currentRoute == item.route,
                 onClick = {
                     navController.navigate(item.route) {
@@ -75,4 +112,18 @@ fun BottomNavigation(
             )
         }
     }
-} 
+}
+
+@Preview(showBackground = true)
+@Composable
+fun BottomNavigationPreview() {
+    val navController = rememberNavController()
+    // In a real app, this would come from a user repository or authentication service
+    var isUserOrganizer by remember { mutableStateOf(true) }
+
+    BottomNavigation(
+        navController = navController,
+        isOrganizer = isUserOrganizer
+    )
+}
+

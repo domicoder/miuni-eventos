@@ -7,6 +7,7 @@ import com.domicoder.miunieventos.data.model.RSVP
 import com.domicoder.miunieventos.data.model.RSVPStatus
 import com.domicoder.miunieventos.data.repository.EventRepository
 import com.domicoder.miunieventos.data.repository.RSVPRepository
+import com.domicoder.miunieventos.util.RSVPStateManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,34 +27,30 @@ class MyEventsViewModel @Inject constructor(
 ) : ViewModel() {
     
     // This would come from a UserRepository or AuthRepository in a real app
-    private val _currentUserId = MutableStateFlow("user_id")
+    private val _currentUserId = MutableStateFlow("") // Will be set by the screen
     val currentUserId: StateFlow<String> = _currentUserId
     
-    // Get RSVPs for the current user with status GOING
+    // Get all RSVPs for the current user (any status)
     private val userRSVPs = currentUserId.flatMapLatest { userId ->
-        rsvpRepository.getRSVPsByUserAndStatus(userId, RSVPStatus.GOING)
+        rsvpRepository.getRSVPsByUserId(userId)
     }
     
-    // Map RSVPs to events
-    val myEvents = userRSVPs.flatMapLatest { rsvps ->
+    // Map RSVPs to events with RSVP status using reactive state
+    val myEvents = combine(
+        userRSVPs,
+        RSVPStateManager.rsvpStates
+    ) { rsvps, rsvpStates ->
+        val userId = currentUserId.value
+        
         if (rsvps.isEmpty()) {
-            return@flatMapLatest MutableStateFlow(emptyList<Event>())
-        }
-        
-        // Create a flow for each event
-        val eventFlows = rsvps.map { rsvp ->
-            eventRepository.getEventById(rsvp.eventId)?.let { event ->
-                MutableStateFlow(event)
-            } ?: MutableStateFlow(null)
-        }
-        
-        // Combine all event flows
-        if (eventFlows.isEmpty()) {
-            return@flatMapLatest MutableStateFlow(emptyList<Event>())
-        }
-        
-        combine(eventFlows) { events ->
-            events.filterNotNull()
+            emptyList<EventWithRSVP>()
+        } else {
+            // Create events with RSVP status from the reactive state
+            rsvps.mapNotNull { rsvp ->
+                eventRepository.getEventById(rsvp.eventId)?.let { event ->
+                    EventWithRSVP(event, rsvp.status)
+                }
+            }.sortedBy { it.event.startDateTime }
         }
     }.stateIn(
         scope = viewModelScope,
@@ -64,4 +61,10 @@ class MyEventsViewModel @Inject constructor(
     fun setCurrentUserId(userId: String) {
         _currentUserId.value = userId
     }
-} 
+}
+
+// Data class to hold event with RSVP status
+data class EventWithRSVP(
+    val event: Event,
+    val rsvpStatus: RSVPStatus
+) 

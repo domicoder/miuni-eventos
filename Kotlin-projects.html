@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>12 Ideas de Proyectos Android con Kotlin para la Universidad</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chosen Palette: Calm Slate -->
+    <!-- Application Structure Plan: A single-page dashboard displaying 12 Android project ideas as interactive cards in a responsive grid. Users can filter projects by category (Social, Logística, Académico). Clicking a card opens a modal with detailed information about that specific Android project. This structure was chosen for its high scannability, intuitive filtering for user-driven exploration, and use of a modal to keep the user within the main application context, ideal for an SPA presenting a collection of project concepts. -->
+    <!-- Visualization & Content Choices: The report (now a collection of Android project ideas) is textual, so no data charts are used. Project ideas are presented as cards for a quick overview and in a detailed modal view for deep-dives. Emojis are used as thematic icons. Filtering is handled by JS-powered category buttons. The key interaction is the card-to-modal flow. This design organizes the 12 distinct text-based items into a browseable and digestible format, focusing on Android app concepts. No SVG/Mermaid used. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        .modal-backdrop {
+            transition: opacity 0.3s ease;
+        }
+        .modal-content {
+            transition: transform 0.3s ease;
+        }
+        .filter-btn.active {
+            background-color: #3b82f6; /* Tailwind's blue-500 */
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="container mx-auto px-4 py-8 md:py-12">
+        <header class="text-center mb-8 md:mb-12">
+            <h1 class="text-3xl md:text-5xl font-bold text-slate-900 mb-2">Ideas de Proyectos Android con Kotlin para la Universidad</h1>
+            <p class="text-md md:text-lg text-slate-600 max-w-3xl mx-auto">Una colección interactiva de ideas para aplicaciones Android, diseñadas para practicar tus habilidades de desarrollo en Kotlin y resolver problemas comunes de la vida universitaria.</p>
+        </header>
+
+        <nav id="filter-nav" class="flex justify-center flex-wrap gap-2 mb-8">
+            <button class="filter-btn active py-2 px-4 bg-white border border-slate-300 rounded-full text-sm font-medium hover:bg-slate-100 transition" data-filter="all">Todos</button>
+            <button class="filter-btn py-2 px-4 bg-white border border-slate-300 rounded-full text-sm font-medium hover:bg-slate-100 transition" data-filter="social">Vida Social y Campus</button>
+            <button class="filter-btn py-2 px-4 bg-white border border-slate-300 rounded-full text-sm font-medium hover:bg-slate-100 transition" data-filter="logistica">Administración y Logística</button>
+            <button class="filter-btn py-2 px-4 bg-white border border-slate-300 rounded-full text-sm font-medium hover:bg-slate-100 transition" data-filter="academico">Académico y Soporte</button>
+        </nav>
+
+        <main id="project-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Project cards will be dynamically inserted here -->
+        </main>
+    </div>
+
+    <!-- Modal Structure -->
+    <div id="project-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop bg-black bg-opacity-50 hidden opacity-0">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform scale-95">
+            <div class="sticky top-0 bg-white/80 backdrop-blur-sm p-4 sm:p-6 border-b border-slate-200 flex justify-between items-center">
+                <h2 id="modal-title" class="text-xl sm:text-2xl font-bold text-slate-900"></h2>
+                <button id="close-modal-btn" class="text-slate-500 hover:text-slate-800 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-4 sm:p-6">
+                <div class="mb-6">
+                    <h3 class="font-semibold text-lg text-slate-700 mb-2">El Problema Universitario (Contexto Android)</h3>
+                    <p id="modal-problem" class="text-slate-600"></p>
+                </div>
+                <div class="mb-6">
+                    <h3 class="font-semibold text-lg text-slate-700 mb-2">Objetivo de la App Android</h3>
+                    <p id="modal-objective" class="text-slate-600"></p>
+                </div>
+                <div class="mb-6">
+                    <h3 class="font-semibold text-lg text-slate-700 mb-2">Características Principales (App Android)</h3>
+                    <ul id="modal-features" class="list-disc list-inside text-slate-600 space-y-1"></ul>
+                </div>
+                <div class="mb-6">
+                    <h3 class="font-semibold text-lg text-slate-700 mb-2">Habilidades Android Clave a Practicar</h3>
+                    <p id="modal-skills" class="text-slate-600"></p>
+                </div>
+                 <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                    <h3 class="font-semibold text-lg text-slate-700 mb-2">💡 Idea de Pantalla de UI (Android)</h3>
+                    <div id="modal-ui-idea" class="text-slate-600 space-y-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const projectData = [
+            {
+                id: 1,
+                title: "App: Cola de Pedidos de Cafetería",
+                emoji: "☕",
+                category: "social",
+                problem: "Los estudiantes necesitan una forma rápida de pedir café desde sus teléfonos y recibir notificaciones cuando esté listo, evitando largas colas físicas.",
+                objective: "Desarrollar una app Android para que los estudiantes pidan café de las cafeterías del campus y reciban actualizaciones de estado en tiempo real y notificaciones de recogida.",
+                features: [
+                    "Navegar por menús de cafeterías y personalizar pedidos.",
+                    "Integración de pagos móviles (simulada o real).",
+                    "Seguimiento de pedidos en tiempo real (p. ej., 'Preparando', 'Listo para recoger').",
+                    "Notificaciones push para actualizaciones de estado del pedido.",
+                    "Cuentas de usuario para historial de pedidos y favoritos guardados."
+                ],
+                skills: "RecyclerView para menú/cola, ViewModel/LiveData o StateFlow para gestión de estado, Room para pedidos/favoritos guardados, Firebase Cloud Messaging (FCM) para notificaciones (o simular notificaciones locales), Retrofit para llamadas API (simuladas).",
+                uiIdea: `
+                    <p>Pantalla principal: Interfaz con pestañas (p. ej., "Menú", "Mis Pedidos", "Perfil").</p>
+                    <p>Pestaña "Menú": Tarjetas para cafeterías, luego lista de artículos con botón "Añadir al carrito".</p>
+                    <p>Pestaña "Mis Pedidos": Lista de pedidos activos y pasados con indicadores de estado.</p>
+                    <p>Pantalla de detalle del pedido mostrando el progreso.</p>`
+            },
+            {
+                id: 2,
+                title: "App: Descubridor de Eventos Universitarios",
+                emoji: "🎉",
+                category: "social",
+                problem: "Los estudiantes se pierden eventos universitarios porque son difíciles de descubrir o seguir sobre la marcha. Los organizadores necesitan una forma móvil eficiente de gestionar los RSVP.",
+                objective: "Una app Android para que los estudiantes descubran eventos universitarios, confirmen asistencia y reciban recordatorios. Los organizadores pueden gestionar eventos y asistentes.",
+                features: [
+                    "Feed de descubrimiento de eventos con filtros (fecha, categoría, departamento).",
+                    "Pantallas detalladas de eventos con descripción, ubicación (¿integración de mapas?) y botón de RSVP.",
+                    "Notificaciones push para recordatorios o actualizaciones de eventos.",
+                    "'Entrada' digital o código QR para el check-in en el evento (para organizadores).",
+                    "Integración de calendario para estudiantes."
+                ],
+                skills: "RecyclerView para lista de eventos, Google Maps API (opcional), ViewModel, Room para eventos/RSVP guardados, FCM para recordatorios, Calendar API.",
+                uiIdea: `
+                    <p>Navegación inferior: "Descubrir", "Mis Eventos", "Escanear QR" (para organizadores).</p>
+                    <p>"Descubrir": Tarjetas para eventos, filtrables.</p>
+                    <p>Pantalla de detalle del evento: Imagen, descripción, fragmento de mapa, botón de RSVP.</p>
+                    <p>"Mis Eventos": Lista de eventos a los que el usuario ha confirmado asistencia.</p>`
+            },
+            {
+                id: 3,
+                title: "App: Gestor de Membresías de Clubes",
+                emoji: "🧑‍🤝‍🧑",
+                category: "social",
+                problem: "Los responsables de los clubes luchan por gestionar membresías, comunicarse con los miembros y rastrear cuotas usando hojas de cálculo sobre la marcha.",
+                objective: "Una app Android para que los responsables de los clubes gestionen miembros, envíen anuncios y rastreen cuotas. Los miembros pueden ver información del club y su estado.",
+                features: [
+                    "Inicio de sesión seguro para responsables de clubes.",
+                    "Lista de miembros con capacidades de búsqueda y filtro.",
+                    "Rastrear el estado de pago de cuotas (marcar como pagado/no pagado).",
+                    "Enviar notificaciones push o anuncios dentro de la app a los miembros.",
+                    "Vista de perfil de miembro (para que los miembros vean su propia información).",
+                    "Creación de eventos y RSVP dentro del contexto del club."
+                ],
+                skills: "RecyclerView, ViewModel, Room o Firebase Firestore para almacenamiento de datos (el aspecto multiusuario implica la nube), Authentication (Firebase Auth), FCM para anuncios.",
+                uiIdea: `
+                    <p>Panel de control del responsable: Estadísticas generales, acciones rápidas (agregar miembro, enviar anuncio).</p>
+                    <p>Pantalla de lista de miembros: Lista con opción de búsqueda, tocar para ver/editar detalles.</p>
+                    <p>Pantalla de redacción de anuncios.</p>
+                    <p>Vista del miembro: Feed del club, estado de sus cuotas.</p>`
+            },
+            {
+                id: 4,
+                title: "App: Buscador de Grupos de Estudio",
+                emoji: "📚",
+                category: "academico",
+                problem: "Encontrar compañeros de estudio para cursos específicos puede ser difícil, especialmente para estudiantes nuevos en el campus o en clases grandes.",
+                objective: "Una app Android para ayudar a los estudiantes a conectarse con compañeros para formar grupos de estudio para sus cursos.",
+                features: [
+                    "Los estudiantes pueden listar los cursos para los que necesitan compañeros de estudio.",
+                    "Navegar o buscar grupos de estudio por curso.",
+                    "Indicar disponibilidad u horarios/lugares de estudio preferidos.",
+                    "Chat (simulado) dentro de la app o intercambio de contactos para conectarse.",
+                    "Opcional: Crear 'perfiles de grupo' una vez formados."
+                ],
+                skills: "RecyclerView, ViewModel, Room o Firebase Firestore para listados de grupos, funcionalidad de búsqueda, perfiles de usuario básicos.",
+                uiIdea: `
+                    <p>Pantalla principal: Pestañas para "Buscar Grupos" y "Mis Grupos".</p>
+                    <p>"Buscar Grupos": Lista de cursos con búsquedas activas de grupos, filtro por departamento/código de curso.</p>
+                    <p>Pantalla de detalle del curso: Lista de estudiantes interesados, botón para expresar interés.</p>
+                    <p>Pantalla de perfil para gestionar los cursos listados.</p>`
+            },
+            {
+                id: 5,
+                title: "App: Estado de Estacionamientos del Campus",
+                emoji: "🚗",
+                category: "logistica",
+                problem: "El estacionamiento universitario suele ser limitado, y los estudiantes necesitan información en tiempo real sobre la disponibilidad para ahorrar tiempo.",
+                objective: "Una app Android que muestre la disponibilidad en tiempo real (simulada para el proyecto) de lugares de estacionamiento en los lotes del campus.",
+                features: [
+                    "Vista de mapa que muestra los lotes de estacionamiento del campus con estado de disponibilidad codificado por colores (p. ej., verde, amarillo, rojo).",
+                    "Vista de lista de lotes de estacionamiento con lugares disponibles y capacidad total.",
+                    "Opción de marcar lotes como 'favoritos' para acceso rápido.",
+                    "(Opcional) Notificaciones push si un lote favorito tiene lugares disponibles."
+                ],
+                skills: "Google Maps API o una imagen estática del mapa del campus, RecyclerView para vista de lista, ViewModel, actualizaciones de datos simuladas, Room para favoritos.",
+                uiIdea: `
+                    <p>Pantalla principal: Mapa del campus con marcadores interactivos para los lotes.</p>
+                    <p>Debajo del mapa/en un panel deslizable: Vista de lista de lotes con detalles.</p>
+                    <p>Pantalla de detalle del lote: Información más específica, disponibilidad histórica (extra).</p>`
+            },
+            {
+                id: 6,
+                title: "App: Planificador de Asientos de Graduación",
+                emoji: "🎓",
+                category: "logistica",
+                problem: "Los administradores necesitan una forma portátil de gestionar las asignaciones de asientos de graduación y realizar cambios de última hora. Los estudiantes podrían querer ver su sección asignada.",
+                objective: "Una app Android para que los administradores gestionen los asientos de graduación y para que los estudiantes verifiquen su sección asignada.",
+                features: [
+                    "Inicio de sesión de administrador.",
+                    "Definir secciones de ceremonia, capacidades y facultades/carreras asignadas.",
+                    "Agregar/editar registros de estudiantes para la graduación.",
+                    "Algoritmo para autoasignar estudiantes a secciones o asignación manual.",
+                    "Buscar un estudiante para ver su asiento/sección asignada.",
+                    "Vista de estudiante: Ingresar ID para ver su sección."
+                ],
+                skills: "RecyclerView, ViewModel, Room o Firebase Firestore, Authentication, validación de datos.",
+                uiIdea: `
+                    <p>Admin: Panel con secciones, lista de estudiantes no asignados. Interfaz de arrastrar y soltar para sentar (avanzado).</p>
+                    <p>Estudiante: Entrada simple para ID de estudiante, luego muestra de información de la sección.</p>
+                    <p>Representación visual del plano de asientos para administradores.</p>`
+            },
+            {
+                id: 7,
+                title: "App: Préstamo de Equipos de Laboratorio",
+                emoji: "🔬",
+                category: "academico",
+                problem: "Rastrear equipos de laboratorio en papel es ineficiente y propenso a errores. Una app móvil puede agilizar los préstamos y devoluciones.",
+                objective: "Una app Android para que técnicos de laboratorio y estudiantes gestionen el préstamo y la devolución de equipos de laboratorio.",
+                features: [
+                    "Inventario de equipos de laboratorio con detalles y estado de disponibilidad.",
+                    "Inicio de sesión de estudiante/técnico.",
+                    "Escanear código de barras del equipo (usando la cámara) o seleccionar de la lista para prestar/devolver.",
+                    "Registrar ID de estudiante y fecha de vencimiento para artículos prestados.",
+                    "Historial de préstamos para cada artículo/estudiante.",
+                    "Notificaciones para artículos vencidos."
+                ],
+                skills: "RecyclerView, ViewModel, Room o Firebase Firestore, CameraX o ML Kit Barcode Scanning, Authentication, WorkManager para notificaciones de vencimiento.",
+                uiIdea: `
+                    <p>Pantalla principal: Pestañas para "Inventario", "Préstamos Activos", "Escanear".</p>
+                    <p>"Inventario": Lista de equipos con opción de búsqueda.</p>
+                    <p>"Escanear": Vista de cámara para escaneo de códigos de barras.</p>
+                    <p>Pantalla de detalle del artículo: Historial, estado actual.</p>`
+            },
+            {
+                id: 8,
+                title: "App: Intercambio de Libros de Texto",
+                emoji: "�",
+                category: "academico",
+                problem: "Los estudiantes necesitan una forma fácil y móvil de comprar y vender libros de texto usados dentro de la comunidad del campus.",
+                objective: "Una app Android que cree un mercado para que los estudiantes listen, encuentren y se conecten para intercambiar libros de texto.",
+                features: [
+                    "Los estudiantes pueden crear listados con título del libro, ISBN, curso, condición, precio y fotos (integración de cámara).",
+                    "Navegar y buscar listados con filtros (curso, título, ISBN).",
+                    "Mensajería (simulada) dentro de la app para conectar compradores y vendedores.",
+                    "Lista de deseos o búsquedas guardadas para libros necesarios."
+                ],
+                skills: "RecyclerView, ViewModel, Room o Firebase Firestore (para listados y usuarios), CameraX para fotos, Firebase Storage para imágenes.",
+                uiIdea: `
+                    <p>Feed estilo mercado de listados de libros de texto (tarjetas con imagen, título, precio).</p>
+                    <p>Barra de búsqueda y opciones de filtro.</p>
+                    <p>Pantalla "Vender Libro" con formulario y carga de imágenes.</p>
+                    <p>Secciones "Mis Anuncios" y "Mensajes".</p>`
+            },
+            {
+                id: 9,
+                title: "App: Programador de Horas de Consulta",
+                emoji: "🗓️",
+                category: "academico",
+                problem: "Enviar correos electrónicos de ida y vuelta para programar horas de consulta es inefficiente. Una app móvil puede simplificar la reserva para profesores y estudiantes.",
+                objective: "Una app Android para que los profesores establezcan su disponibilidad de horas de consulta y para que los estudiantes reserven citas.",
+                features: [
+                    "Interfaz de profesor: Establecer franjas de disponibilidad recurrentes o únicas. Ver citas reservadas.",
+                    "Interfaz de estudiante: Ver las franjas disponibles del profesor. Reservar una cita.",
+                    "Integración de calendario para ambos.",
+                    "Notificaciones push para recordatorios o cancelaciones de citas."
+                ],
+                skills: "Vistas de calendario personalizadas o CalendarView, RecyclerView para franjas, ViewModel, Room o Firebase Firestore, Authentication, FCM, Calendar API.",
+                uiIdea: `
+                    <p>Profesor: Vista de calendario que muestra su horario, tocar un día para agregar/editar franjas. Lista de próximas citas.</p>
+                    <p>Estudiante: Seleccionar profesor, ver su calendario con franjas disponibles resaltadas, tocar para reservar. Pantalla "Mis Citas".</p>`
+            },
+            {
+                id: 10,
+                title: "App: Rastreador de Rutas de Transporte (Sim.)",
+                emoji: "🚌",
+                category: "logistica",
+                problem: "Los estudiantes que esperan los transportes del campus aprecian la ubicación en tiempo real y los tiempos de llegada estimados en sus teléfonos.",
+                objective: "Una app Android que simule y muestre la ubicación en tiempo real de los transportes del campus y los TLE (Tiempos Estimados de Llegada) para varias paradas.",
+                features: [
+                    "Vista de mapa que muestra las rutas de transporte y las ubicaciones de los autobuses en vivo (simuladas).",
+                    "Seleccionar una parada para ver los TLE de los próximos autobuses.",
+                    "Vista de lista de todas las rutas y el estado actual de sus autobuses.",
+                    "(Opcional) Paradas favoritas para verificaciones rápidas de TLE."
+                ],
+                skills: "Google Maps API, RecyclerView para listas de rutas/paradas, ViewModel, actualizaciones de datos simuladas usando temporizadores/corutinas, Room para favoritos.",
+                uiIdea: `
+                    <p>Pantalla principal: Mapa interactivo que muestra iconos de autobús moviéndose a lo largo de las rutas.</p>
+                    <p>Hoja inferior o pestaña separada para lista de rutas/paradas y TLE.</p>
+                    <p>Posibilidad de tocar una parada en el mapa para ver los TLE.</p>`
+            },
+             {
+                id: 11,
+                title: "App: Recopilador de Comentarios de Eventos",
+                emoji: "📝",
+                category: "social",
+                problem: "Recopilar comentarios oportunos después de los eventos del campus puede ser un desafío. Una app móvil lo hace conveniente para que los estudiantes respondan.",
+                objective: "Una app Android para que los organizadores creen formularios de comentarios para eventos y para que los estudiantes envíen calificaciones y comentarios anónimos.",
+                features: [
+                    "Los organizadores pueden crear eventos y definir preguntas simples de comentarios (p. ej., calificación por estrellas, comentario abierto).",
+                    "Los estudiantes pueden encontrar eventos y enviar comentarios anónimos.",
+                    "Los organizadores pueden ver comentarios agregados: calificaciones promedio, lista de comentarios.",
+                    "(Opcional) Escaneo de código QR para acceder rápidamente al formulario de comentarios de un evento."
+                ],
+                skills: "RecyclerView para lista de eventos/comentarios, ViewModel, Room o Firebase Firestore, elementos básicos de formulario de entrada.",
+                uiIdea: `
+                    <p><b>Estudiante:</b> Lista de eventos recientes, tocar para abrir el formulario de comentarios (calificación por estrellas, campo de texto).</p>
+                    <p><b>Organizador:</b> Panel con lista de sus eventos, tocar para ver el resumen de comentarios (promedio de estrellas, comentarios desplazables).</p>`
+            },
+            {
+                id: 12,
+                title: "App: Registrador de Salud y Bienestar",
+                emoji: "💧",
+                category: "social",
+                problem: "Los estudiantes a menudo necesitan recordatorios y una herramienta simple para rastrear hábitos de bienestar como la hidratación, el sueño y el estado de ánimo durante la estresante vida universitaria.",
+                objective: "Una app Android personal para que los estudiantes registren y rastreen métricas diarias de bienestar, con información simple y recordatorios.",
+                features: [
+                    "Registro diario de ingesta de agua, horas de sueño, estado de ánimo (p. ej., usando emojis o una escala).",
+                    "Almacenamiento local de datos para privacidad.",
+                    "Resúmenes simples que muestran tendencias durante una semana/mes (evitar gráficos complejos si las bibliotecas de gráficos están restringidas; usar resúmenes numéricos o indicadores visuales básicos).",
+                    "Recordatorios personalizables (p. ej., '¡Hora de beber agua!')."
+                ],
+                skills: "Base de datos Room, ViewModel, elementos de UI simples para entrada (deslizadores, botones), AlarmManager o WorkManager para recordatorios. Para visualizaciones, resúmenes numéricos o indicadores visuales simples con vistas estándar de Android.",
+                uiIdea: `
+                    <p>Pantalla principal "Registrar": Campos de entrada simples o botones +/- para agua, sueño. Selector de emojis para el estado de ánimo. Botón "Guardar Registro de Hoy".</p>
+                    <p>Pantalla "Panel": Resúmenes textuales: "Prom. Sueño (Últimos 7 días): X horas", "Prom. Ánimo: Y/5". Quizás barras de progreso simples (hechas con elementos visuales estándar de Android) para representar metas diarias vs. reales para el agua.</p>
+                    <p>Pantalla de configuración para recordatorios.</p>`
+            }
+        ];
+
+        const projectGrid = document.getElementById('project-grid');
+        const modal = document.getElementById('project-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const filterNav = document.getElementById('filter-nav');
+
+        function createProjectCard(project) {
+            const card = document.createElement('div');
+            card.className = 'project-card bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer';
+            card.dataset.id = project.id;
+            card.dataset.category = project.category;
+            card.innerHTML = `
+                <div class="text-4xl mb-4">${project.emoji}</div>
+                <h3 class="font-bold text-lg text-slate-800 mb-2">${project.title}</h3>
+                <p class="text-slate-500 text-sm">${project.problem}</p>
+            `;
+            card.addEventListener('click', () => openModal(project));
+            return card;
+        }
+
+        function displayProjects(filter = 'all') {
+            projectGrid.innerHTML = '';
+            const filteredProjects = filter === 'all' 
+                ? projectData 
+                : projectData.filter(p => p.category === filter);
+
+            filteredProjects.forEach(project => {
+                const card = createProjectCard(project);
+                projectGrid.appendChild(card);
+            });
+        }
+        
+        function openModal(project) {
+            document.getElementById('modal-title').textContent = project.title;
+            document.getElementById('modal-problem').textContent = project.problem;
+            document.getElementById('modal-objective').textContent = project.objective;
+            
+            const featuresList = document.getElementById('modal-features');
+            featuresList.innerHTML = '';
+            project.features.forEach(feature => {
+                const li = document.createElement('li');
+                li.textContent = feature;
+                featuresList.appendChild(li);
+            });
+
+            document.getElementById('modal-skills').innerHTML = project.skills; // innerHTML allows backticks to be rendered as code
+            document.getElementById('modal-ui-idea').innerHTML = project.uiIdea; // innerHTML for HTML content
+
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            
+            // Force reflow for transition
+            void modal.offsetWidth; 
+
+            modal.classList.remove('opacity-0');
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                 modalContent.classList.remove('scale-95');
+            }
+        }
+
+        function closeModal() {
+            modal.classList.add('opacity-0');
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                modalContent.classList.add('scale-95');
+            }
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }, 300); 
+        }
+
+        filterNav.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+                const filter = e.target.dataset.filter;
+                displayProjects(filter);
+            }
+        });
+
+        closeModalBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+
+        displayProjects();
+    </script>
+</body>
+</html>
+�

@@ -4,6 +4,7 @@
     <!-- Bottom Navigation -->
     <string name="discover">Descubrir</string>
     <string name="my_events">Mis Eventos</string>
+    <string name="maps">Mapa</string>
     <string name="scan_qr">Escanear QR</string>
     <string name="profile">Perfil</string>
     
@@ -65,6 +66,25 @@
     <string name="scan_attendee_qr">Escanear QR de Asistente</string>
     <string name="attendee_checked_in">Asistente registrado correctamente</string>
     <string name="invalid_qr">QR inválido</string>
+    <string name="processing_qr">Procesando código QR…</string>
+    <string name="scan_another_code">Escanear otro código</string>
+    <string name="try_again">Intentar de nuevo</string>
+    <string name="camera_permission_required">Se requiere permiso de cámara para escanear códigos QR</string>
+    <string name="grant_permission">Conceder Permiso</string>
+    <string name="scanner_instructions">Apunta la cámara al código QR del asistente</string>
+    <string name="test_qr_generation">Generar QR de Prueba</string>
+    <string name="test_qr_description">Genera un QR válido para probar el scanner:</string>
+    <string name="qr_generated">QR Generado:</string>
+    <string name="scan_with_camera">Escanea este QR con la cámara de abajo</string>
+    <string name="check_in_time">Hora de registro:</string>
+    <string name="event_not_in_progress">El evento no está en curso</string>
+    <string name="user_already_registered">El usuario ya fue registrado en este evento</string>
+    <string name="no_rsvp_found">No se encontró confirmación de asistencia para este usuario</string>
+    <string name="invalid_qr_format">Formato de QR inválido. Debe ser: event_id:user_id</string>
+    <string name="qr_format_tip">El QR debe tener formato: event_id:user_id</string>
+    <string name="verify_event_id">Verifica que el ID del evento sea correcto</string>
+    <string name="user_must_rsvp">El usuario debe confirmar asistencia primero</string>
+    <string name="user_already_checked_in">Este usuario ya fue registrado</string>
     
     <!-- General -->
     <string name="loading">Cargando…</string>

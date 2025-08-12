@@ -50,6 +50,7 @@ firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
 
+
 # Maps
 google-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "maps" }
 maps-compose = { group = "com.google.maps.android", name = "maps-compose", version.ref = "mapsCompose" }

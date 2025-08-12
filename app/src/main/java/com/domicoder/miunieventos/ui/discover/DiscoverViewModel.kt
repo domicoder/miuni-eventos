@@ -3,7 +3,10 @@ package com.domicoder.miunieventos.ui.discover
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.domicoder.miunieventos.data.model.Event
+import com.domicoder.miunieventos.data.model.RSVPStatus
 import com.domicoder.miunieventos.data.repository.EventRepository
+import com.domicoder.miunieventos.data.repository.RSVPRepository
+import com.domicoder.miunieventos.util.RSVPStateManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -15,7 +18,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DiscoverViewModel @Inject constructor(
-    private val eventRepository: EventRepository
+    private val eventRepository: EventRepository,
+    private val rsvpRepository: RSVPRepository
 ) : ViewModel() {
     
     private val _searchQuery = MutableStateFlow("")
@@ -27,34 +31,17 @@ class DiscoverViewModel @Inject constructor(
     private val _selectedDepartment = MutableStateFlow<String?>(null)
     val selectedDepartment: StateFlow<String?> = _selectedDepartment
     
-    val events = combine(
-        eventRepository.getUpcomingEvents(),
-        searchQuery,
-        selectedCategory,
-        selectedDepartment
-    ) { events, query, category, department ->
-        events.filter { event ->
-            val matchesQuery = if (query.isNotBlank()) {
-                event.title.contains(query, ignoreCase = true) ||
-                event.description.contains(query, ignoreCase = true) ||
-                event.location.contains(query, ignoreCase = true)
-            } else true
-            
-            val matchesCategory = if (category != null) {
-                event.category == category
-            } else true
-            
-            val matchesDepartment = if (department != null) {
-                event.department == department
-            } else true
-            
-            matchesQuery && matchesCategory && matchesDepartment
-        }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
+    private val _showOnlySelectedEvents = MutableStateFlow(false)
+    val showOnlySelectedEvents: StateFlow<Boolean> = _showOnlySelectedEvents
+    
+    val events: StateFlow<List<Event>> = eventRepository.getUpcomingEvents()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+    
+
     
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
@@ -71,5 +58,17 @@ class DiscoverViewModel @Inject constructor(
     fun clearFilters() {
         _selectedCategory.value = null
         _selectedDepartment.value = null
+        _showOnlySelectedEvents.value = false
     }
+    
+    fun resetSelectedEventsFilter() {
+        _showOnlySelectedEvents.value = false
+    }
+    
+    fun toggleShowOnlySelected() {
+        _showOnlySelectedEvents.value = !_showOnlySelectedEvents.value
+    }
+    
+    // Get RSVP data for the current user
+    fun getUserRSVPs(userId: String) = rsvpRepository.getRSVPsByUserId(userId)
 } 

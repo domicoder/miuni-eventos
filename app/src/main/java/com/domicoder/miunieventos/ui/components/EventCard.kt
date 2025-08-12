@@ -35,7 +35,8 @@ import java.time.format.DateTimeFormatter
 fun EventCard(
     event: Event,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isConfirmed: Boolean = false
 ) {
     val dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -44,7 +45,16 @@ fun EventCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = if (isConfirmed) {
+            androidx.compose.foundation.BorderStroke(
+                width = 2.dp,
+                color = MaterialTheme.colorScheme.primary
+            )
+        } else null
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // Event Image

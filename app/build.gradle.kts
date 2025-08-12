@@ -92,6 +92,7 @@ dependencies {
     implementation(libs.firebase.messaging)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+
     
     // Maps
     implementation(libs.google.maps)

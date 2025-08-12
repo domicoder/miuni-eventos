@@ -30,6 +30,39 @@ MiUNIEventos helps university students and staff discover, manage, and participa
 -   **Real-time Updates**: Firebase integration for live event updates
 -   **Maps Integration**: Google Maps for event location visualization
 -   **Push Notifications**: Stay updated on event changes and reminders
+-   **QR Code System**: Complete QR code generation and scanning for event attendance
+
+## QR Code Functionality
+
+The app includes a comprehensive QR code system for event attendance:
+
+### QR Code Format
+
+QR codes contain data in the format: `event_id:user_id`
+
+Example: `event1:user3`
+
+### How to Use
+
+#### For Organizers:
+
+1. Navigate to the "Escanear QR" (Scan QR) tab in the bottom navigation
+2. Point the camera at an attendee's QR code
+3. The app will automatically process the QR code and check in the attendee
+4. View real-time feedback on the scan result
+
+#### For Attendees:
+
+1. Receive a QR code from the event organizer
+2. Present the QR code to be scanned
+3. Get instant confirmation of check-in
+
+### Technical Implementation
+
+-   **Scanner**: Uses ZXing library for robust QR code detection
+-   **Camera**: Integrated camera permissions and lifecycle management
+-   **Processing**: Real-time QR code validation and RSVP updates
+-   **UI**: Material Design 3 with smooth animations and feedback
 
 ## Tech Stack
 

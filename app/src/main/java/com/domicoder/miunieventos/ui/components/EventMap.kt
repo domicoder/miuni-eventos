@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import com.domicoder.miunieventos.data.model.Event
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.CameraPosition
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
@@ -68,7 +69,7 @@ fun SingleEventMap(
     
     val eventPosition = LatLng(event.latitude, event.longitude)
     val cameraPositionState = rememberCameraPositionState {
-        position = com.google.android.gms.maps.model.CameraPosition.fromLatLngZoom(eventPosition, 15f)
+        position = CameraPosition.fromLatLngZoom(eventPosition, 15f)
     }
     
     GoogleMap(

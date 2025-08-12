@@ -9,6 +9,7 @@ import com.domicoder.miunieventos.data.model.RSVPStatus
 import com.domicoder.miunieventos.data.repository.EventRepository
 import com.domicoder.miunieventos.data.repository.RSVPRepository
 import com.domicoder.miunieventos.data.repository.UserRepository
+import com.domicoder.miunieventos.util.RSVPStateManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -26,10 +27,10 @@ class EventDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     
-    private val eventId: String = checkNotNull(savedStateHandle["eventId"])
+    private val eventId: String = savedStateHandle["eventId"] ?: ""
     
     // This would come from a UserRepository or AuthRepository in a real app
-    private val _currentUserId = MutableStateFlow("user_id")
+    private val _currentUserId = MutableStateFlow("") // Will be set by the screen
     val currentUserId: StateFlow<String> = _currentUserId
     
     private val _event = MutableStateFlow<Event?>(null)
@@ -51,7 +52,7 @@ class EventDetailViewModel @Inject constructor(
         loadEvent()
     }
     
-    private fun loadEvent() {
+    fun loadEvent(eventId: String = this.eventId) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
@@ -93,9 +94,20 @@ class EventDetailViewModel @Inject constructor(
                 
                 rsvpRepository.upsertRSVP(newRSVP)
                 _userRSVP.value = newRSVP
+                
+                // Update the shared RSVP state manager
+                RSVPStateManager.updateRSVPStatus(_currentUserId.value, eventId, status)
             } catch (e: Exception) {
-                _error.value = e.message
+                // Handle error
             }
+        }
+    }
+    
+    fun setCurrentUserId(userId: String) {
+        _currentUserId.value = userId
+        // Reload event data with the new user ID to get their RSVP status
+        if (eventId.isNotEmpty()) {
+            loadEvent()
         }
     }
     
@@ -110,10 +122,6 @@ class EventDetailViewModel @Inject constructor(
                 _error.value = e.message
             }
         }
-    }
-    
-    fun setCurrentUserId(userId: String) {
-        _currentUserId.value = userId
     }
     
     fun clearError() {

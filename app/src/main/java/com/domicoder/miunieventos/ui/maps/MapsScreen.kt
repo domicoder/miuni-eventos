@@ -49,11 +49,11 @@ fun MapsScreen(
 ) {
     val events by viewModel.events.collectAsState()
     val context = LocalContext.current
-    val defaultLocation = LatLng(18.45633857179163, -69.92436293569348) 
+    val defaultLocation = LatLng(18.45640641117086, -69.9245333245128)
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(defaultLocation, 12f)
     }
-    
+
     // Handle location permissions
     val (hasLocationPermission, requestLocationPermission) = rememberLocationPermissionState()
     val currentHasPermission = PermissionHandler.hasLocationPermission(context)

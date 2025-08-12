@@ -3,6 +3,7 @@ package com.domicoder.miunieventos.di
 import com.domicoder.miunieventos.data.MockDataProvider
 import com.domicoder.miunieventos.data.model.Event
 import com.domicoder.miunieventos.data.model.RSVP
+import com.domicoder.miunieventos.data.model.RSVPStatus
 import com.domicoder.miunieventos.data.model.User
 import com.domicoder.miunieventos.data.repository.EventRepository
 import com.domicoder.miunieventos.data.repository.RSVPRepository
@@ -84,35 +85,64 @@ object DataModule {
     @Singleton
     fun provideRSVPRepository(): RSVPRepository {
         return object : RSVPRepository(null) {
-            override fun getAllRSVPs(): Flow<List<RSVP>> = flowOf(MockDataProvider.rsvps)
+            // Maintain mock data state during app session
+            private val mockRSVPs = mutableListOf<RSVP>().apply {
+                addAll(MockDataProvider.rsvps)
+            }
+            
+            override fun getAllRSVPs(): Flow<List<RSVP>> = flowOf(mockRSVPs)
             
             override fun getRSVPsByEventId(eventId: String): Flow<List<RSVP>> = 
-                flowOf(MockDataProvider.rsvps.filter { it.eventId == eventId })
+                flowOf(mockRSVPs.filter { it.eventId == eventId })
             
             override fun getRSVPsByUserId(userId: String): Flow<List<RSVP>> = 
-                flowOf(MockDataProvider.rsvps.filter { it.userId == userId })
+                flowOf(mockRSVPs.filter { it.userId == userId })
             
-            override fun getRSVPsByUserAndStatus(userId: String, status: com.domicoder.miunieventos.data.model.RSVPStatus): Flow<List<RSVP>> = 
-                flowOf(MockDataProvider.rsvps.filter { it.userId == userId && it.status == status })
+            override fun getRSVPsByUserAndStatus(userId: String, status: RSVPStatus): Flow<List<RSVP>> = 
+                flowOf(mockRSVPs.filter { it.userId == userId && it.status == status })
             
             override suspend fun getRSVPById(id: Long): RSVP? = 
-                MockDataProvider.rsvps.find { it.id == id }
+                mockRSVPs.find { it.id == id }
             
             override suspend fun getRSVPByEventAndUser(eventId: String, userId: String): RSVP? = 
-                MockDataProvider.getRSVPByEventAndUser(eventId, userId)
+                mockRSVPs.find { it.eventId == eventId && it.userId == userId }
             
-            override suspend fun countRSVPsByEventAndStatus(eventId: String, status: com.domicoder.miunieventos.data.model.RSVPStatus): Int = 
-                MockDataProvider.rsvps.count { it.eventId == eventId && it.status == status }
+            override suspend fun countRSVPsByEventAndStatus(eventId: String, status: RSVPStatus): Int = 
+                mockRSVPs.count { it.eventId == eventId && it.status == status }
             
-            override suspend fun insertRSVP(rsvp: RSVP): Long = 1L // Mock ID
+            override suspend fun insertRSVP(rsvp: RSVP): Long {
+                val newId = (mockRSVPs.maxOfOrNull { it.id } ?: 0) + 1
+                val newRSVP = rsvp.copy(id = newId)
+                mockRSVPs.add(newRSVP)
+                return newId
+            }
             
-            override suspend fun updateRSVP(rsvp: RSVP) { /* No-op in mock */ }
+            override suspend fun updateRSVP(rsvp: RSVP) {
+                val index = mockRSVPs.indexOfFirst { it.id == rsvp.id }
+                if (index != -1) {
+                    mockRSVPs[index] = rsvp
+                }
+            }
             
-            override suspend fun upsertRSVP(rsvp: RSVP) { /* No-op in mock */ }
+            override suspend fun upsertRSVP(rsvp: RSVP) {
+                val existingIndex = mockRSVPs.indexOfFirst { 
+                    it.eventId == rsvp.eventId && it.userId == rsvp.userId 
+                }
+                if (existingIndex == -1) {
+                    insertRSVP(rsvp)
+                } else {
+                    val existingRSVP = mockRSVPs[existingIndex]
+                    mockRSVPs[existingIndex] = rsvp.copy(id = existingRSVP.id)
+                }
+            }
             
-            override suspend fun deleteRSVP(rsvp: RSVP) { /* No-op in mock */ }
+            override suspend fun deleteRSVP(rsvp: RSVP) {
+                mockRSVPs.removeIf { it.id == rsvp.id }
+            }
             
-            override suspend fun deleteRSVPByEventAndUser(eventId: String, userId: String) { /* No-op in mock */ }
+            override suspend fun deleteRSVPByEventAndUser(eventId: String, userId: String) {
+                mockRSVPs.removeIf { it.eventId == eventId && it.userId == userId }
+            }
         }
     }
 } 

@@ -9,6 +9,7 @@ sealed class NavRoutes(val route: String) {
         fun createRoute(eventId: String) = "event_detail/$eventId"
     }
     object Profile : NavRoutes("profile")
+    object EditProfile : NavRoutes("edit_profile")
     object Login : NavRoutes("login")
     object Register : NavRoutes("register")
     object CreateEvent : NavRoutes("create_event")

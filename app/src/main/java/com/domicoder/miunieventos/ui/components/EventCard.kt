@@ -30,13 +30,16 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.domicoder.miunieventos.data.model.Event
 import java.time.format.DateTimeFormatter
+import androidx.compose.foundation.BorderStroke
+import com.domicoder.miunieventos.data.model.RSVPStatus
 
 @Composable
 fun EventCard(
     event: Event,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    isConfirmed: Boolean = false
+    rsvpStatus: RSVPStatus? = null,
+    isAuthenticating: Boolean = false
 ) {
     val dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -49,8 +52,8 @@ fun EventCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        border = if (isConfirmed) {
-            androidx.compose.foundation.BorderStroke(
+        border = if (isAuthenticating && rsvpStatus in listOf(RSVPStatus.GOING, RSVPStatus.MAYBE)) {
+            BorderStroke(
                 width = 2.dp,
                 color = MaterialTheme.colorScheme.primary
             )

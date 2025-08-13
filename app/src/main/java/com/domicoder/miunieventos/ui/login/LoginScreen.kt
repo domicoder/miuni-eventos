@@ -2,8 +2,10 @@ package com.domicoder.miunieventos.ui.login
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,14 +20,22 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.Checkbox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,63 +48,58 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.domicoder.miunieventos.R
+import com.domicoder.miunieventos.data.repository.AuthResult
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: (String) -> Unit
+    onLoginSuccess: (String, Boolean) -> Unit,
+    viewModel: LoginViewModel = hiltViewModel()
 ) {
-     var email by remember { mutableStateOf("carlos.rodriguez@unicda.edu.do") }
-//   var email by remember { mutableStateOf("juanito.alimana@unicda.edu.do") }
+    var email by remember { mutableStateOf("juanito.alimana@unicda.edu.do") }
     var password by remember { mutableStateOf("123456") }
-    var showError by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
+    var showCreateAccount by remember { mutableStateOf(false) }
+    var rememberMe by remember { mutableStateOf(true) }
     
-    // Hardcoded users for MVP testing (hidden from UI)
-    val hardcodedUsers = listOf(
-        HardcodedUser(
-            email = "juanito.alimana@unicda.edu.do",
-            password = "123456",
-            name = "Juanito Alimaña",
-            department = "Ingeniería Software",
-            isOrganizer = true,
-            userId = "user1"
-        ),
-        HardcodedUser(
-            email = "maria.gonzalez@unicda.edu.do",
-            password = "123456",
-            name = "María González",
-            department = "Ciencias Sociales",
-            isOrganizer = true,
-            userId = "user2"
-        ),
-        HardcodedUser(
-            email = "carlos.rodriguez@unicda.edu.do",
-            password = "123456",
-            name = "Carlos Rodríguez",
-            department = "Medicina",
-            isOrganizer = false,
-            userId = "user3"
-        )
-    )
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
+    val authResult by viewModel.authResult.collectAsState()
+    
+    // Handle authentication result
+    LaunchedEffect(authResult) {
+        authResult?.let { result ->
+            when (result) {
+                is AuthResult.Success -> {
+                    // Call the onLoginSuccess callback to notify the parent with user ID and remember me preference
+                    onLoginSuccess(result.user.id, rememberMe)
+                    viewModel.clearAuthResult()
+                }
+                is AuthResult.Error -> {
+                    // Error is already handled in the ViewModel
+                }
+            }
+        }
+    }
     
     fun handleLogin() {
-        // First check hardcoded users for testing
-        val hardcodedUser = hardcodedUsers.find { it.email == email && it.password == password }
-        
-        if (hardcodedUser != null) {
-            showError = false
-            onLoginSuccess(hardcodedUser.userId)
-        } else if (email.isNotBlank() && password.isNotBlank()) {
-            // For any other valid email/password combination
-            showError = false
-            val userId = email.replace("@", "_").replace(".", "_")
-            onLoginSuccess(userId)
+        if (email.isNotBlank() && password.isNotBlank()) {
+            viewModel.login(email, password, rememberMe)
         } else {
-            showError = true
-            errorMessage = "Por favor ingresa tu correo electrónico y contraseña."
+            // This will be handled by the ViewModel
+        }
+    }
+    
+    fun handleCreateAccount() {
+        if (email.isNotBlank() && password.isNotBlank()) {
+            val name = email.split("@")[0].replace(".", " ").replace("_", " ")
+            val department = "Departamento"
+            viewModel.createAccount(email, password, name, department, rememberMe)
+        } else {
+            // This will be handled by the ViewModel
         }
     }
     
@@ -159,7 +164,6 @@ fun LoginScreen(
                     text = "Iniciar Sesión",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
                 
@@ -197,7 +201,15 @@ fun LoginScreen(
                             contentDescription = "Password"
                         )
                     },
-                    visualTransformation = PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { showPassword = !showPassword }) {
+                            Icon(
+                                imageVector = if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (showPassword) "Hide password" else "Show password"
+                            )
+                        }
+                    },
+                    visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done
@@ -206,51 +218,116 @@ fun LoginScreen(
                     singleLine = true
                 )
                 
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Remember Me checkbox
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = rememberMe,
+                        onCheckedChange = { rememberMe = it }
+                    )
+                    Text(
+                        text = "Recordar sesión",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
+                
                 Spacer(modifier = Modifier.height(24.dp))
                 
                 // Login Button
                 Button(
                     onClick = { handleLogin() },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    enabled = !isLoading && email.isNotBlank() && password.isNotBlank()
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Email,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                     
                     Spacer(modifier = Modifier.width(8.dp))
                     
                     Text(
-                        text = "Iniciar Sesión",
+                        text = if (isLoading) "Iniciando..." else "Iniciar Sesión",
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium
                     )
                 }
                 
                 // Error Message
-                if (showError) {
+                if (error != null) {
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     Text(
-                        text = errorMessage,
+                        text = error ?: "",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Create Account Button
+                TextButton(
+                    onClick = { showCreateAccount = !showCreateAccount },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = if (showCreateAccount) "Ya tengo cuenta" else "Crear cuenta",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                
+                // Create Account Form
+                if (showCreateAccount) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Button(
+                        onClick = { handleCreateAccount() },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = !isLoading && email.isNotBlank() && password.isNotBlank()
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Email,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.width(8.dp))
+                        
+                        Text(
+                            text = if (isLoading) "Creando..." else "Crear Cuenta",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+                
+                // Test Account Info (for MVP)
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }
 }
-
-data class HardcodedUser(
-    val email: String,
-    val password: String,
-    val name: String,
-    val department: String,
-    val isOrganizer: Boolean,
-    val userId: String
-)

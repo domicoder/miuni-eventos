@@ -36,6 +36,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -86,6 +88,10 @@ fun EventDetailScreen(
     val userRSVP by viewModel.userRSVP.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    
+    // Attendance data for organizers
+    val attendees by viewModel.attendees.collectAsState()
+    val attendanceCount by viewModel.attendanceCount.collectAsState()
     
     val dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -493,8 +499,158 @@ fun EventDetailScreen(
                                     
                                     Text("Mostrar Código QR de Asistencia")
                                 }
+                            }
+                            
+                            Spacer(modifier = Modifier.height(24.dp))
+                            
+                            // Attendance Section for Organizers
+                            if (isAuthenticated && eventData.organizerId == currentUserId) {
+                                // Debug logging
+                                println("DEBUG: Showing attendance section for organizer")
+                                println("DEBUG: eventData.organizerId: ${eventData.organizerId}")
+                                println("DEBUG: currentUserId: $currentUserId")
+                                println("DEBUG: attendees count: ${attendees.size}")
+                                println("DEBUG: attendanceCount: $attendanceCount")
                                 
-                                Spacer(modifier = Modifier.height(16.dp))
+                                // Organizer view - show attendance list
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                    )
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(16.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.CheckCircle,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                            
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            
+                                            Text(
+                                                text = "Asistencia del Evento",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            
+                                            Spacer(modifier = Modifier.weight(1f))
+                                            
+                                            Text(
+                                                text = "$attendanceCount estudiantes",
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                        
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        
+                                        // Check-in QR Code Button for Organizers
+                                        Button(
+                                            onClick = { 
+                                                event?.let { eventData ->
+                                                    val checkInQR = QRCodeGenerator.generateEventCheckInQRCode(eventData.id)
+                                                    if (checkInQR != null) {
+                                                        qrCodeBitmap = checkInQR
+                                                        showQRCodeDialog = true
+                                                    }
+                                                }
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            colors = ButtonDefaults.outlinedButtonColors()
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.QrCodeScanner,
+                                                contentDescription = null
+                                            )
+                                            
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            
+                                            Text("Generar QR de Check-in del Evento")
+                                        }
+                                        
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        
+                                        if (attendees.isEmpty()) {
+                                            Text(
+                                                text = "Aún no hay estudiantes registrados en la asistencia",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                textAlign = TextAlign.Center,
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                        } else {
+                                            // List of attendees
+                                            Column(
+                                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                attendees.forEach { attendee ->
+                                                    Card(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        colors = CardDefaults.cardColors(
+                                                            containerColor = MaterialTheme.colorScheme.surface
+                                                        )
+                                                    ) {
+                                                        Row(
+                                                            modifier = Modifier.padding(12.dp),
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            Icon(
+                                                                imageVector = Icons.Default.Person,
+                                                                contentDescription = null,
+                                                                tint = MaterialTheme.colorScheme.primary,
+                                                                modifier = Modifier.size(20.dp)
+                                                            )
+                                                            
+                                                            Spacer(modifier = Modifier.width(12.dp))
+                                                            
+                                                            Column(
+                                                                modifier = Modifier.weight(1f)
+                                                            ) {
+                                                                Text(
+                                                                    text = attendee.name,
+                                                                    style = MaterialTheme.typography.bodyMedium,
+                                                                    fontWeight = FontWeight.Medium
+                                                                )
+                                                                
+                                                                Text(
+                                                                    text = attendee.email,
+                                                                    style = MaterialTheme.typography.bodySmall,
+                                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                                )
+                                                                
+                                                                Text(
+                                                                    text = "Llegó: ${attendee.checkInTime.format(DateTimeFormatter.ofPattern("dd MMM HH:mm"))}",
+                                                                    style = MaterialTheme.typography.bodySmall,
+                                                                    color = MaterialTheme.colorScheme.primary
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                println("DEBUG: Attendance section not shown for organizer")
+                            }
+                            
+                            // Debug logging for attendance section visibility
+                            if (isAuthenticated) {
+                                println("DEBUG: User is authenticated")
+                                println("DEBUG: eventData.organizerId: ${eventData.organizerId}")
+                                println("DEBUG: currentUserId: $currentUserId")
+                                println("DEBUG: Is organizer: ${eventData.organizerId == currentUserId}")
+                            } else {
+                                println("DEBUG: User is NOT authenticated")
                             }
                             
                             // Add to Calendar Button
@@ -547,7 +703,7 @@ fun EventDetailScreen(
                 },
                 title = {
                     Text(
-                        text = "Código QR de Asistencia",
+                        text = if (event?.organizerId == currentUserId) "QR de Check-in del Evento" else "Código QR de Asistencia",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -557,7 +713,10 @@ fun EventDetailScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Muestra este código QR al organizador del evento para confirmar tu asistencia",
+                            text = if (event?.organizerId == currentUserId) 
+                                "Escanea este código QR para registrar la llegada de estudiantes al evento" 
+                            else 
+                                "Muestra este código QR al organizador del evento para confirmar tu asistencia",
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.padding(bottom = 16.dp)
@@ -574,7 +733,10 @@ fun EventDetailScreen(
                         }
                         
                         Text(
-                            text = "Evento: ${event?.title ?: ""}",
+                            text = if (event?.organizerId == currentUserId) 
+                                "Evento: ${event?.title ?: ""} - QR de Check-in" 
+                            else 
+                                "Evento: ${event?.title ?: ""}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 8.dp)

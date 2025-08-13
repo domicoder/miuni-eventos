@@ -50,6 +50,22 @@ import com.domicoder.miunieventos.util.RSVPStateManager
 import com.domicoder.miunieventos.data.model.RSVPStatus
 import com.domicoder.miunieventos.data.model.Event
 import com.domicoder.miunieventos.data.model.RSVP
+import androidx.compose.foundation.layout.Arrangement
+import java.time.LocalDate
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.rememberDatePickerState
+import java.time.ZoneId
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,6 +79,8 @@ fun DiscoverScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val selectedDepartment by viewModel.selectedDepartment.collectAsState()
+    val selectedStartDate by viewModel.selectedStartDate.collectAsState()
+    val selectedEndDate by viewModel.selectedEndDate.collectAsState()
     val showOnlySelectedEvents by viewModel.showOnlySelectedEvents.collectAsState()
     
     // Reset the "Solo Seleccionados" filter when user is not authenticated
@@ -95,8 +113,6 @@ fun DiscoverScreen(
         emptyMap<String, RSVPStatus>()
     }
     
-
-    
     // Filter events based on current filters
     val events = allEvents.filter { event ->
         val matchesQuery = if (searchQuery.isNotBlank()) {
@@ -113,12 +129,20 @@ fun DiscoverScreen(
             event.department == selectedDepartment
         } else true
         
+        val matchesStartDate = if (selectedStartDate != null) {
+            event.startDateTime.toLocalDate() >= selectedStartDate
+        } else true
+        
+        val matchesEndDate = if (selectedEndDate != null) {
+            event.startDateTime.toLocalDate() <= selectedEndDate
+        } else true
+        
         // Filter for selected events (GOING status) when showOnlySelected is true and user is authenticated
         val matchesSelectedFilter = if (showOnlySelectedEvents && isAuthenticated) {
             effectiveUserRsvpStates[event.id] == RSVPStatus.GOING
         } else true
         
-        matchesQuery && matchesCategory && matchesDepartment && matchesSelectedFilter
+        matchesQuery && matchesCategory && matchesDepartment && matchesStartDate && matchesEndDate && matchesSelectedFilter
     }
     
     var searchActive by remember { mutableStateOf(false) }
@@ -131,6 +155,17 @@ fun DiscoverScreen(
         stringResource(R.string.category_workshop),
         stringResource(R.string.category_conference),
         stringResource(R.string.category_other)
+    )
+    
+    val departments = listOf(
+        stringResource(R.string.department_software_engineering),
+        stringResource(R.string.department_social_sciences),
+        stringResource(R.string.department_medicine),
+        stringResource(R.string.department_arts),
+        stringResource(R.string.department_sports),
+        stringResource(R.string.department_student_association),
+        stringResource(R.string.department_computer_engineering),
+        stringResource(R.string.department_other)
     )
     
     Column(modifier = Modifier.fillMaxSize()) {
@@ -149,43 +184,435 @@ fun DiscoverScreen(
             // Search suggestions could go here
         }
         
-        // Categories filter
-        Text(
-            text = stringResource(R.string.filter),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
+        // Combined Filter Section
+        var isFilterExpanded by remember { mutableStateOf(false) }
         
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            modifier = Modifier.padding(vertical = 8.dp)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (selectedCategory != null || selectedDepartment != null || selectedStartDate != null || selectedEndDate != null || showOnlySelectedEvents) {
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                }
+            ),
+            border = if (selectedCategory != null || selectedDepartment != null || selectedStartDate != null || selectedEndDate != null || showOnlySelectedEvents) {
+                BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+            } else null
         ) {
-            // Filter for showing only selected events (only for authenticated users)
-            if (isAuthenticated) {
-                item {
-                    FilterChip(
-                        selected = showOnlySelectedEvents,
-                        onClick = { viewModel.toggleShowOnlySelected() },
-                        label = { Text("Solo Seleccionados") },
-                        modifier = Modifier.padding(end = 8.dp)
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                // Filter Header with Toggle and Clear All button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.filter),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        
+                        Spacer(modifier = Modifier.width(8.dp))
+                        
+                        IconButton(
+                            onClick = { isFilterExpanded = !isFilterExpanded },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isFilterExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                contentDescription = if (isFilterExpanded) "Ocultar filtros" else "Mostrar filtros",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    
+                    if (selectedCategory != null || selectedDepartment != null || selectedStartDate != null || selectedEndDate != null || showOnlySelectedEvents) {
+                        TextButton(
+                            onClick = { viewModel.clearFilters() },
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Text(
+                                text = "Limpiar Todo",
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+                    }
+                }
+                
+                
+                // Show filters only when expanded
+                if (isFilterExpanded) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    // Quick Filters Row (Most commonly used)
+                LazyRow(
+                    contentPadding = PaddingValues(0.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Authenticated user filter
+                    if (isAuthenticated) {
+                        item {
+                            FilterChip(
+                                selected = showOnlySelectedEvents,
+                                onClick = { viewModel.toggleShowOnlySelected() },
+                                label = { Text("Solo Seleccionados") },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer
+                                )
+                            )
+                        }
+                    }
+                    
+                    // Today filter
+                    item {
+                        FilterChip(
+                            selected = selectedStartDate == LocalDate.now(),
+                            onClick = {
+                                if (selectedStartDate == LocalDate.now()) {
+                                    viewModel.setSelectedStartDate(null)
+                                } else {
+                                    viewModel.setSelectedStartDate(LocalDate.now())
+                                }
+                            },
+                            label = { Text(stringResource(R.string.today)) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer
+                            )
+                        )
+                    }
+                    
+                    // This week filter
+                    item {
+                        FilterChip(
+                            selected = selectedStartDate == LocalDate.now() && selectedEndDate == LocalDate.now().plusDays(6),
+                            onClick = {
+                                if (selectedStartDate == LocalDate.now() && selectedEndDate == LocalDate.now().plusDays(6)) {
+                                    viewModel.setSelectedStartDate(null)
+                                    viewModel.setSelectedEndDate(null)
+                                } else {
+                                    viewModel.setSelectedStartDate(LocalDate.now())
+                                    viewModel.setSelectedEndDate(LocalDate.now().plusDays(6))
+                                }
+                            },
+                            label = { Text(stringResource(R.string.this_week)) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer
+                            )
+                        )
+                    }
+                    
+                    // Tomorrow filter
+                    item {
+                        FilterChip(
+                            selected = selectedStartDate == LocalDate.now().plusDays(1),
+                            onClick = {
+                                if (selectedStartDate == LocalDate.now().plusDays(1)) {
+                                    viewModel.setSelectedStartDate(null)
+                                } else {
+                                    viewModel.setSelectedStartDate(LocalDate.now().plusDays(1))
+                                }
+                            },
+                            label = { Text(stringResource(R.string.tomorrow)) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer
+                            )
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Expandable Categories Section
+                var showCategories by remember { mutableStateOf(false) }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Categorías",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Medium
                     )
+                    IconButton(
+                        onClick = { showCategories = !showCategories }
+                    ) {
+                        Icon(
+                            imageVector = if (showCategories) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = if (showCategories) "Ocultar categorías" else "Mostrar categorías"
+                        )
+                    }
+                }
+                
+                if (showCategories) {
+                    LazyRow(
+                        contentPadding = PaddingValues(0.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        items(categories) { category ->
+                            FilterChip(
+                                selected = category == selectedCategory,
+                                onClick = {
+                                    if (category == selectedCategory) {
+                                        viewModel.setSelectedCategory(null)
+                                    } else {
+                                        viewModel.setSelectedCategory(category)
+                                    }
+                                },
+                                label = { Text(category) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer
+                                )
+                            )
+                        }
+                    }
+                }
+                
+                // Expandable Departments Section
+                var showDepartments by remember { mutableStateOf(false) }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Departamentos",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                    IconButton(
+                        onClick = { showDepartments = !showDepartments }
+                    ) {
+                        Icon(
+                            imageVector = if (showDepartments) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = if (showDepartments) "Ocultar departamentos" else "Mostrar departamentos"
+                        )
+                    }
+                }
+                
+                if (showDepartments) {
+                    LazyRow(
+                        contentPadding = PaddingValues(0.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        items(departments) { department ->
+                            FilterChip(
+                                selected = department == selectedDepartment,
+                                onClick = {
+                                    if (department == selectedDepartment) {
+                                        viewModel.setSelectedDepartment(null)
+                                    } else {
+                                        viewModel.setSelectedDepartment(department)
+                                    }
+                                },
+                                label = { Text(department) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.tertiaryContainer
+                                )
+                            )
+                        }
+                    }
+                }
+                
+                
+                // Date Range Picker Section
+                Text(
+                    text = "Rango de Fechas",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Start Date Picker
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.start_date),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                        
+                        var showStartDatePicker by remember { mutableStateOf(false) }
+                        
+                        OutlinedButton(
+                            onClick = { showStartDatePicker = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = if (selectedStartDate != null) 
+                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) 
+                                else 
+                                    MaterialTheme.colorScheme.surface
+                            )
+                        ) {
+                            Text(
+                                text = selectedStartDate?.toString() ?: "Seleccionar fecha",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        
+                        if (showStartDatePicker) {
+                            val startDatePickerState = rememberDatePickerState(
+                                initialSelectedDateMillis = selectedStartDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
+                            )
+                            
+                            DatePickerDialog(
+                                onDismissRequest = { showStartDatePicker = false },
+                                confirmButton = {
+                                    TextButton(
+                                        onClick = { 
+                                            startDatePickerState.selectedDateMillis?.let { millis ->
+                                                val selectedDate = java.time.Instant.ofEpochMilli(millis)
+                                                    .atZone(ZoneId.systemDefault())
+                                                    .toLocalDate()
+                                                viewModel.setSelectedStartDate(selectedDate)
+                                            }
+                                            showStartDatePicker = false 
+                                        }
+                                    ) {
+                                        Text("OK")
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showStartDatePicker = false }) {
+                                        Text("Cancelar")
+                                    }
+                                }
+                            ) {
+                                DatePicker(
+                                    state = startDatePickerState,
+                                    title = { Text("Seleccionar fecha de inicio") }
+                                )
+                            }
+                        }
+                    }
+                    
+                    // End Date Picker
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.end_date),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                        
+                        var showEndDatePicker by remember { mutableStateOf(false) }
+                        
+                        OutlinedButton(
+                            onClick = { showEndDatePicker = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = if (selectedEndDate != null) 
+                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) 
+                                else 
+                                    MaterialTheme.colorScheme.surface
+                            )
+                        ) {
+                            Text(
+                                text = selectedEndDate?.toString() ?: "Seleccionar fecha",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        
+                        if (showEndDatePicker) {
+                            val endDatePickerState = rememberDatePickerState(
+                                initialSelectedDateMillis = selectedEndDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
+                            )
+                            
+                            DatePickerDialog(
+                                onDismissRequest = { showEndDatePicker = false },
+                                confirmButton = {
+                                    TextButton(
+                                        onClick = { 
+                                            endDatePickerState.selectedDateMillis?.let { millis ->
+                                                val selectedDate = java.time.Instant.ofEpochMilli(millis)
+                                                    .atZone(ZoneId.systemDefault())
+                                                    .toLocalDate()
+                                                viewModel.setSelectedEndDate(selectedDate)
+                                            }
+                                            showEndDatePicker = false 
+                                        }
+                                    ) {
+                                        Text("OK")
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showEndDatePicker = false }) {
+                                        Text("Cancelar")
+                                    }
+                                }
+                            ) {
+                                DatePicker(
+                                    state = endDatePickerState,
+                                    title = { Text("Seleccionar fecha de fin") }
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                // Clear Date Range Button
+                if (selectedStartDate != null || selectedEndDate != null) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(
+                            onClick = {
+                                viewModel.setSelectedStartDate(null)
+                                viewModel.setSelectedEndDate(null)
+                            }
+                        ) {
+                            Text("Limpiar fechas")
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
                 }
             }
-
-            items(categories) { category ->
-                FilterChip(
-                    selected = category == selectedCategory,
-                    onClick = {
-                        if (category == selectedCategory) {
-                            viewModel.setSelectedCategory(null)
-                        } else {
-                            viewModel.setSelectedCategory(category)
-                        }
-                    },
-                    label = { Text(category) },
-                    modifier = Modifier.padding(end = 8.dp)
+        }
+        
+        // Filter count indicator
+        if (selectedCategory != null || selectedDepartment != null || selectedStartDate != null || selectedEndDate != null || showOnlySelectedEvents) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Mostrando ${events.size} de ${allEvents.size} eventos",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                
+                if (events.size < allEvents.size) {
+                    Text(
+                        text = "Filtros activos",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
         

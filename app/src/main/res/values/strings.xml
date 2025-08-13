@@ -95,4 +95,28 @@
     <string name="search">Buscar</string>
     <string name="filter">Filtrar</string>
     <string name="sort">Ordenar</string>
+    
+    <!-- Departments -->
+    <string name="department_software_engineering">Ingeniería Software</string>
+    <string name="department_social_sciences">Ciencias Sociales</string>
+    <string name="department_medicine">Medicina</string>
+    <string name="department_arts">Artes</string>
+    <string name="department_sports">Deportes</string>
+    <string name="department_student_association">Asociación Estudiantil</string>
+    <string name="department_computer_engineering">Ingeniería Informática</string>
+    <string name="department_other">Otro</string>
+    
+    <!-- Date Filtering -->
+    <string name="filter_by_date">Filtrar por Fecha</string>
+    <string name="filter_by_department">Filtrar por Departamento</string>
+    <string name="start_date">Fecha de Inicio</string>
+    <string name="end_date">Fecha de Fin</string>
+    <string name="clear_date_filter">Limpiar Filtro de Fecha</string>
+    <string name="clear_department_filter">Limpiar Filtro de Departamento</string>
+    <string name="today">Hoy</string>
+    <string name="tomorrow">Mañana</string>
+    <string name="this_week">Esta Semana</string>
+    <string name="next_week">Próxima Semana</string>
+    <string name="this_month">Este Mes</string>
+    <string name="next_month">Próximo Mes</string>
 </resources>

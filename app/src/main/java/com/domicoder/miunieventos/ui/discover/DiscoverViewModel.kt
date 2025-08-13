@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
@@ -31,6 +32,12 @@ class DiscoverViewModel @Inject constructor(
     private val _selectedDepartment = MutableStateFlow<String?>(null)
     val selectedDepartment: StateFlow<String?> = _selectedDepartment
     
+    private val _selectedStartDate = MutableStateFlow<LocalDate?>(null)
+    val selectedStartDate: StateFlow<LocalDate?> = _selectedStartDate
+    
+    private val _selectedEndDate = MutableStateFlow<LocalDate?>(null)
+    val selectedEndDate: StateFlow<LocalDate?> = _selectedEndDate
+    
     private val _showOnlySelectedEvents = MutableStateFlow(false)
     val showOnlySelectedEvents: StateFlow<Boolean> = _showOnlySelectedEvents
     
@@ -40,8 +47,6 @@ class DiscoverViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
-    
-
     
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
@@ -55,9 +60,19 @@ class DiscoverViewModel @Inject constructor(
         _selectedDepartment.value = department
     }
     
+    fun setSelectedStartDate(date: LocalDate?) {
+        _selectedStartDate.value = date
+    }
+    
+    fun setSelectedEndDate(date: LocalDate?) {
+        _selectedEndDate.value = date
+    }
+    
     fun clearFilters() {
         _selectedCategory.value = null
         _selectedDepartment.value = null
+        _selectedStartDate.value = null
+        _selectedEndDate.value = null
         _showOnlySelectedEvents.value = false
     }
     

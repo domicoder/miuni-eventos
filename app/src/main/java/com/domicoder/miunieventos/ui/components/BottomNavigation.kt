@@ -43,7 +43,8 @@ data class BottomNavItem(
 @Composable
 fun BottomNavigation(
     navController: NavController,
-    isOrganizer: Boolean = false
+    isOrganizer: Boolean = false,
+    userId: String = ""
 ) {
     val items = listOfNotNull(
         BottomNavItem(
@@ -69,7 +70,7 @@ fun BottomNavigation(
             )
         } else null,
         BottomNavItem(
-            route = NavRoutes.Profile.route,
+            route = "profile", // Use a base route for navigation
             iconVector = Icons.Default.AccountCircle,
             stringResourceId = R.string.profile
         )
@@ -97,16 +98,37 @@ fun BottomNavigation(
                         modifier = Modifier.padding(horizontal = 0.dp)
                     ) 
                 },
-                selected = currentRoute == item.route,
+                selected = when {
+                    item.route == "profile" -> currentRoute == NavRoutes.Profile.route
+                    item.route.startsWith("edit_profile/") -> currentRoute?.startsWith("edit_profile/") == true
+                    item.route.startsWith("event_detail/") -> currentRoute?.startsWith("event_detail/") == true
+                    else -> currentRoute == item.route
+                },
                 onClick = {
-                    navController.navigate(item.route) {
-                        navController.graph.startDestinationRoute?.let { route ->
-                            popUpTo(route) {
-                                saveState = true
+                    // For profile navigation, handle both authenticated and unauthenticated states
+                    if (item.route == "profile") {
+                        // Always navigate to the base profile route
+                        // The Profile screen will handle authentication state internally
+                        navController.navigate(NavRoutes.Profile.route) {
+                            navController.graph.startDestinationRoute?.let { route ->
+                                popUpTo(route) {
+                                    saveState = true
+                                }
                             }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
+                    } else {
+                        // For other routes, use normal navigation
+                        navController.navigate(item.route) {
+                            navController.graph.startDestinationRoute?.let { route ->
+                                popUpTo(route) {
+                                    saveState = true
+                                }
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 }
             )

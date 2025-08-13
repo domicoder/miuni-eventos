@@ -57,7 +57,6 @@ fun DiscoverScreen(
     navController: NavController,
     isAuthenticated: Boolean = false,
     currentUserId: String = "",
-    onLoginRequest: () -> Unit = {},
     viewModel: DiscoverViewModel = hiltViewModel()
 ) {
     val allEvents by viewModel.events.collectAsState()
@@ -218,7 +217,8 @@ fun DiscoverScreen(
                         onClick = {
                             navController.navigate(NavRoutes.EventDetail.createRoute(event.id))
                         },
-                        modifier = Modifier.padding(bottom = 16.dp)
+                        modifier = Modifier.padding(bottom = 16.dp),
+                        isAuthenticating = isAuthenticated
                     )
                 }
             }
@@ -231,7 +231,8 @@ fun EventCardWithRSVPStatus(
     event: Event,
     rsvpStatus: RSVPStatus?,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isAuthenticating: Boolean = false,
 ) {
     Box(modifier = modifier) {
         // Check icon for confirmed events (GOING status) - only for authenticated users
@@ -293,7 +294,8 @@ fun EventCardWithRSVPStatus(
                 event = event,
                 onClick = onClick,
                 modifier = Modifier.fillMaxWidth(),
-                isConfirmed = rsvpStatus == RSVPStatus.GOING
+                rsvpStatus = rsvpStatus,
+                isAuthenticating = isAuthenticating
             )
         }
     }

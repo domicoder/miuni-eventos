@@ -9,6 +9,7 @@ import com.domicoder.miunieventos.data.repository.EventRepository
 import com.domicoder.miunieventos.data.repository.RSVPRepository
 import com.domicoder.miunieventos.util.RSVPStateManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -31,6 +32,7 @@ class MyEventsViewModel @Inject constructor(
     val currentUserId: StateFlow<String> = _currentUserId
     
     // Get all RSVPs for the current user (any status)
+    @OptIn(ExperimentalCoroutinesApi::class)
     private val userRSVPs = currentUserId.flatMapLatest { userId ->
         rsvpRepository.getRSVPsByUserId(userId)
     }
@@ -39,9 +41,7 @@ class MyEventsViewModel @Inject constructor(
     val myEvents = combine(
         userRSVPs,
         RSVPStateManager.rsvpStates
-    ) { rsvps, rsvpStates ->
-        val userId = currentUserId.value
-        
+    ) { rsvps, _ ->
         if (rsvps.isEmpty()) {
             emptyList<EventWithRSVP>()
         } else {

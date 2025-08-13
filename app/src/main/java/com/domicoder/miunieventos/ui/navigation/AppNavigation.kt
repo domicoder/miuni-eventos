@@ -29,19 +29,25 @@ import com.domicoder.miunieventos.ui.profile.EditProfileScreen
 import com.domicoder.miunieventos.ui.scanner.ScannerScreen
 import com.domicoder.miunieventos.util.DeepLinkManager
 import com.domicoder.miunieventos.util.RSVPStateManager
-import com.domicoder.miunieventos.data.model.UserProfileData
+import com.domicoder.miunieventos.util.UserStateManager
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import com.domicoder.miunieventos.ui.organizedevents.OrganizedEventsScreen
+import com.domicoder.miunieventos.ui.eventedit.EditEventScreen
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(
+    userStateManager: UserStateManager
+) {
     val navController = rememberNavController()
+    val coroutineScope = rememberCoroutineScope()
     
-    // Authentication state
-    var isAuthenticated by remember { mutableStateOf(false) }
-    var currentUserId by remember { mutableStateOf<String?>(null) }
-    var isUserOrganizer by remember { mutableStateOf(false) }
-    
-    // User profile information state
-    var userProfileInfo by remember { mutableStateOf<Map<String, UserProfileData>>(emptyMap()) }
+    // Get user state from UserStateManager
+    val currentUser by userStateManager.currentUser.collectAsState()
+    val isAuthenticated by userStateManager.isAuthenticated.collectAsState()
+    val isUserOrganizer by userStateManager.isOrganizer.collectAsState()
     
     // Deep link handling
     val deepLinkEvent by DeepLinkManager.deepLinkEvent.collectAsState()
@@ -56,8 +62,8 @@ fun AppNavigation() {
     }
     
     // Initialize RSVP states from database when user changes
-    LaunchedEffect(currentUserId) {
-        if (currentUserId != null) {
+    LaunchedEffect(currentUser) {
+        if (currentUser != null) {
             // Initialize RSVP states for the current user
             // This would typically come from a repository
             // For now, we'll initialize with empty state
@@ -65,43 +71,13 @@ fun AppNavigation() {
         }
     }
     
-    // Initialize user profile data when user ID changes
-    LaunchedEffect(currentUserId) {
-        if (currentUserId != null) {
-            val initialProfileData = when (currentUserId) {
-                "user1" -> UserProfileData(
-                    name = "Juanito Alimaña",
-                    department = "Ingeniería Software"
-                )
-                "user2" -> UserProfileData(
-                    name = "María González",
-                    department = "Ciencias Sociales"
-                )
-                "user3" -> UserProfileData(
-                    name = "Carlos Rodríguez",
-                    department = "Medicina"
-                )
-                else -> UserProfileData(
-                    name = "Usuario",
-                    department = "Departamento"
-                )
-            }
-            userProfileInfo = userProfileInfo + (currentUserId!! to initialProfileData)
-        }
-    }
-    
-    // Handle profile updates
-    val onProfileUpdated = { userId: String, name: String, department: String ->
-        val updatedProfile = UserProfileData(name = name, department = department)
-        userProfileInfo = userProfileInfo + (userId to updatedProfile)
-    }
-    
     // Handle login success
-    val onLoginSuccess = { userId: String ->
-        currentUserId = userId
-        isAuthenticated = true
-        // Set organizer status based on hardcoded user IDs (for MVP testing)
-        isUserOrganizer = userId in listOf("user1", "user2")
+    val onLoginSuccess = { userId: String, rememberMe: Boolean ->
+        // Set the current user in UserStateManager to persist the login state
+        // This will trigger the authentication state update
+        coroutineScope.launch {
+            userStateManager.setCurrentUserId(userId, rememberMe)
+        }
         navController.navigate(NavRoutes.Discover.route) {
             popUpTo(NavRoutes.Login.route) { inclusive = true }
         }
@@ -109,10 +85,9 @@ fun AppNavigation() {
     
     // Handle logout
     val onLogout = {
-        isAuthenticated = false
-        currentUserId = null
-        isUserOrganizer = false
-        userProfileInfo = emptyMap()
+        coroutineScope.launch {
+            userStateManager.logout()
+        }
         navController.navigate(NavRoutes.Login.route) {
             popUpTo(0) { inclusive = true }
         }
@@ -123,7 +98,8 @@ fun AppNavigation() {
         bottomBar = {
             BottomNavigation(
                 navController = navController,
-                isOrganizer = isUserOrganizer
+                isOrganizer = isUserOrganizer,
+                userId = currentUser?.id ?: ""
             )
         }
     ) { innerPadding ->
@@ -136,10 +112,7 @@ fun AppNavigation() {
                 DiscoverScreen(
                     navController = navController,
                     isAuthenticated = isAuthenticated,
-                    currentUserId = currentUserId ?: "",
-                    onLoginRequest = {
-                        navController.navigate(NavRoutes.Login.route)
-                    }
+                    currentUserId = currentUser?.id ?: ""
                 )
             }
             
@@ -147,7 +120,7 @@ fun AppNavigation() {
                 if (isAuthenticated) {
                     MyEventsScreen(
                         navController = navController,
-                        currentUserId = currentUserId ?: ""
+                        currentUserId = currentUser?.id ?: ""
                     )
                 } else {
                     // Show login prompt instead of redirecting
@@ -177,12 +150,9 @@ fun AppNavigation() {
             }
             
             composable(NavRoutes.Profile.route) {
-                if (isAuthenticated) {
+                if (isAuthenticated && currentUser != null) {
                     ProfileScreen(
                         navController = navController,
-                        userId = currentUserId ?: "",
-                        isOrganizer = isUserOrganizer,
-                        userProfileInfo = userProfileInfo[currentUserId] ?: UserProfileData("Usuario", "Departamento"),
                         onLogout = onLogout
                     )
                 } else {
@@ -195,44 +165,54 @@ fun AppNavigation() {
                 }
             }
             
-            composable(NavRoutes.EditProfile.route) {
-                if (isAuthenticated) {
-                    EditProfileScreen(
-                        navController = navController,
-                        currentName = when (currentUserId) {
-                            "user1" -> "Juanito Alimaña"
-                            "user2" -> "María González"
-                            "user3" -> "Carlos Rodríguez"
-                            else -> "Usuario"
-                        },
-                        currentDepartment = when (currentUserId) {
-                            "user1" -> "Ingeniería Software"
-                            "user2" -> "Ciencias Sociales"
-                            "user3" -> "Medicina"
-                            else -> "Departamento"
-                        },
-                        currentPhotoUrl = when (currentUserId) {
-                            "user1" -> "https://i.pravatar.cc/300?u=user1"
-                            "user2" -> "https://i.pravatar.cc/300?u=user2"
-                            "user3" -> "https://i.pravatar.cc/300?u=user3"
-                            else -> "https://i.pravatar.cc/300?u=default"
-                        },
-                        onProfileUpdated = { name, department ->
-                            // Update the user profile information
-                            onProfileUpdated(currentUserId ?: "", name, department)
-                            navController.popBackStack()
-                        }
-                    )
-                } else {
-                    // Show login prompt or redirect to login
-                    navController.navigate(NavRoutes.Login.route)
-                }
+            composable(
+                route = NavRoutes.OrganizedEvents.route,
+                arguments = listOf(
+                    navArgument("organizerId") {
+                        type = NavType.StringType
+                    }
+                )
+            ) { backStackEntry ->
+                val organizerId = backStackEntry.arguments?.getString("organizerId") ?: ""
+                OrganizedEventsScreen(
+                    navController = navController,
+                    organizerId = organizerId
+                )
+            }
+            
+            composable(
+                route = NavRoutes.EditEvent.route,
+                arguments = listOf(
+                    navArgument("eventId") {
+                        type = NavType.StringType
+                    }
+                )
+            ) { backStackEntry ->
+                val eventId = backStackEntry.arguments?.getString("eventId") ?: ""
+                EditEventScreen(
+                    navController = navController
+                )
             }
             
             composable(NavRoutes.Login.route) {
                 LoginScreen(
                     onLoginSuccess = onLoginSuccess
                 )
+            }
+            
+            composable(NavRoutes.EditProfile.route) {
+                if (isAuthenticated) {
+                    EditProfileScreen(
+                        navController = navController
+                    )
+                } else {
+                    // Show login prompt instead of redirecting
+                    LoginPromptScreen(
+                        onLoginRequest = {
+                            navController.navigate(NavRoutes.Login.route)
+                        }
+                    )
+                }
             }
             
             composable(
@@ -248,7 +228,7 @@ fun AppNavigation() {
                     navController = navController,
                     eventId = eventId ?: "",
                     isAuthenticated = isAuthenticated,
-                    currentUserId = currentUserId ?: "",
+                    currentUserId = currentUser?.id ?: "",
                     onLoginRequest = {
                         navController.navigate(NavRoutes.Login.route)
                     }

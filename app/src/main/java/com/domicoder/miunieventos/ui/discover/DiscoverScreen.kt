@@ -61,6 +61,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -104,9 +105,7 @@ fun DiscoverScreen(
     // Create a map of event ID to RSVP status (only for authenticated users)
     // Prioritize RSVPStateManager data (reactive) over database data
     val effectiveUserRsvpStates = if (isAuthenticated && currentUserId.isNotEmpty()) {
-        if (userRsvpStates.isNotEmpty()) {
-            userRsvpStates
-        } else {
+        userRsvpStates.ifEmpty {
             userRsvps.associate { rsvp -> rsvp.eventId to rsvp.status }
         }
     } else {
@@ -169,22 +168,57 @@ fun DiscoverScreen(
     )
     
     Column(modifier = Modifier.fillMaxSize()) {
-        SearchBar(
-            query = searchQuery,
-            onQueryChange = viewModel::setSearchQuery,
-            onSearch = { viewModel.setSearchQuery(it) },
-            active = searchActive,
-            onActiveChange = { searchActive = it },
-            placeholder = { Text(stringResource(R.string.search)) },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            // Search suggestions could go here
+        var isSearchExpanded by remember { mutableStateOf(false) }
+
+        if (isSearchExpanded) {
+            SearchBar(
+                query = searchQuery,
+                onQueryChange = viewModel::setSearchQuery,
+                onSearch = {
+                    viewModel.setSearchQuery(it)
+                    isSearchExpanded = false // Auto-collapse after search
+                },
+                active = searchActive,
+                onActiveChange = { searchActive = it },
+                placeholder = { Text(stringResource(R.string.search)) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    IconButton(onClick = { isSearchExpanded = false }) {
+                        Icon(Icons.Default.Close, contentDescription = "Cerrar búsqueda")
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                // Search suggestions
+            }
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.discover),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                
+                IconButton(
+                    onClick = { isSearchExpanded = true }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Buscar",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
         }
         
-        // Combined Filter Section
         var isFilterExpanded by remember { mutableStateOf(false) }
         
         Card(
@@ -254,12 +288,10 @@ fun DiscoverScreen(
                 if (isFilterExpanded) {
                     Spacer(modifier = Modifier.height(12.dp))
                     
-                    // Quick Filters Row (Most commonly used)
                 LazyRow(
                     contentPadding = PaddingValues(0.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Authenticated user filter
                     if (isAuthenticated) {
                         item {
                             FilterChip(

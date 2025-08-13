@@ -9,11 +9,14 @@ import com.domicoder.miunieventos.data.model.RSVPStatus
 import com.domicoder.miunieventos.data.repository.EventRepository
 import com.domicoder.miunieventos.data.repository.RSVPRepository
 import com.domicoder.miunieventos.data.repository.UserRepository
+import com.domicoder.miunieventos.data.repository.AttendanceRepository
+import com.domicoder.miunieventos.data.local.AttendeeWithDetails
 import com.domicoder.miunieventos.util.RSVPStateManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -24,6 +27,7 @@ class EventDetailViewModel @Inject constructor(
     private val eventRepository: EventRepository,
     private val rsvpRepository: RSVPRepository,
     private val userRepository: UserRepository,
+    private val attendanceRepository: AttendanceRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     
@@ -48,6 +52,13 @@ class EventDetailViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
     
+    // Attendance tracking for organizers
+    private val _attendees = MutableStateFlow<List<AttendeeWithDetails>>(emptyList())
+    val attendees: StateFlow<List<AttendeeWithDetails>> = _attendees
+    
+    private val _attendanceCount = MutableStateFlow(0)
+    val attendanceCount: StateFlow<Int> = _attendanceCount
+    
     init {
         loadEvent()
     }
@@ -67,6 +78,19 @@ class EventDetailViewModel @Inject constructor(
                     // Load user's RSVP if exists
                     val rsvp = rsvpRepository.getRSVPByEventAndUser(eventId, _currentUserId.value)
                     _userRSVP.value = rsvp
+                    
+                    // Load attendance data for organizers
+                    val attendees = attendanceRepository.getAttendeesWithDetails(eventId).first()
+                    _attendees.value = attendees
+                    
+                    val attendanceCount = attendanceRepository.getAttendanceCountByEvent(eventId)
+                    _attendanceCount.value = attendanceCount
+                    
+                    // Initialize RSVPStateManager with current user's RSVPs
+                    if (_currentUserId.value.isNotEmpty()) {
+                        val userRSVPs = rsvpRepository.getRSVPsByUserId(_currentUserId.value).first()
+                        RSVPStateManager.initializeFromDatabase(userRSVPs)
+                    }
                 }
                 
                 _error.value = null
@@ -126,5 +150,27 @@ class EventDetailViewModel @Inject constructor(
     
     fun clearError() {
         _error.value = null
+    }
+    
+    fun recordAttendance(userId: String, organizerId: String, notes: String? = null) {
+        viewModelScope.launch {
+            try {
+                attendanceRepository.recordAttendance(
+                    eventId = eventId,
+                    userId = userId,
+                    organizerId = organizerId,
+                    notes = notes
+                )
+                
+                // Refresh attendance data
+                val attendees = attendanceRepository.getAttendeesWithDetails(eventId).first()
+                _attendees.value = attendees
+                
+                val attendanceCount = attendanceRepository.getAttendanceCountByEvent(eventId)
+                _attendanceCount.value = attendanceCount
+            } catch (e: Exception) {
+                _error.value = "Error al registrar asistencia: ${e.message}"
+            }
+        }
     }
 } 

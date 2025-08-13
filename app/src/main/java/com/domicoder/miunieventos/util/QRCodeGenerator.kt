@@ -43,46 +43,38 @@ object QRCodeGenerator {
     }
     
     /**
-     * Generate test QR codes for development and testing
-     * Returns a list of QR data and their descriptions
+     * Generate QR code for event check-in
+     * This will be used by organizers to generate QR codes for their events
      */
-    fun generateTestQRCodes(): List<Pair<String, String>> {
-        return listOf(
-            "event1:user3" to "Conferencia AI - Carlos Rodríguez",
-            "event2:user3" to "Taller Fotografía - Carlos Rodríguez", 
-            "event3:user1" to "Torneo Fútbol - Juanito Alimaña",
-            "event1:user2" to "Conferencia AI - María García",
-            "event2:user1" to "Taller Fotografía - Juanito Alimaña",
-            "event3:user3" to "Torneo Fútbol - Carlos Rodríguez",
-            "event4:user1" to "Workshop Programación - Juanito Alimaña",
-            "event4:user2" to "Workshop Programación - María García",
-            "event5:user3" to "Concierto Jazz - Carlos Rodríguez"
-        )
+    fun generateEventCheckInQRCode(eventId: String, width: Int = 512, height: Int = 512): Bitmap? {
+        val qrData = "checkin:$eventId"
+        return generateQRCode(qrData, width, height)
     }
     
     /**
-     * Get valid QR code data for testing
+     * Generate QR code for event registration
+     * This will be used by organizers to generate QR codes for event registration
      */
-    fun getValidQRCodeData(): String {
-        // This returns a valid QR code format that the scanner expects
-        return "event1:user3"
-    }
-    
-    /**
-     * Get a random test QR code for variety in testing
-     */
-    fun getRandomTestQRCode(): String {
-        val testCodes = generateTestQRCodes()
-        return testCodes.random().first
+    fun generateEventRegistrationQRCode(eventId: String, width: Int = 512, height: Int = 512): Bitmap? {
+        val qrData = "register:$eventId"
+        return generateQRCode(qrData, width, height)
     }
     
     /**
      * Validate QR code format
-     * Expected format: "event_id:user_id"
+     * Expected formats: 
+     * - "event_id:user_id" for attendance
+     * - "checkin:event_id" for event check-in
+     * - "register:event_id" for event registration
      */
     fun isValidQRFormat(qrContent: String): Boolean {
         val parts = qrContent.split(":")
-        return parts.size == 2 && parts[0].isNotBlank() && parts[1].isNotBlank()
+        return when {
+            parts.size == 2 && parts[0] == "checkin" -> parts[1].isNotBlank()
+            parts.size == 2 && parts[0] == "register" -> parts[1].isNotBlank()
+            parts.size == 2 -> parts[0].isNotBlank() && parts[1].isNotBlank()
+            else -> false
+        }
     }
     
     /**
@@ -90,7 +82,11 @@ object QRCodeGenerator {
      */
     fun extractEventId(qrContent: String): String? {
         return if (isValidQRFormat(qrContent)) {
-            qrContent.split(":")[0]
+            when {
+                qrContent.startsWith("checkin:") -> qrContent.substringAfter("checkin:")
+                qrContent.startsWith("register:") -> qrContent.substringAfter("register:")
+                else -> qrContent.split(":")[0]
+            }
         } else null
     }
     
@@ -98,8 +94,27 @@ object QRCodeGenerator {
      * Extract user ID from QR content
      */
     fun extractUserId(qrContent: String): String? {
-        return if (isValidQRFormat(qrContent)) {
+        return if (isValidQRFormat(qrContent) && !qrContent.startsWith("checkin:") && !qrContent.startsWith("register:")) {
             qrContent.split(":")[1]
         } else null
     }
+    
+    /**
+     * Get QR code type
+     */
+    fun getQRCodeType(qrContent: String): QRCodeType {
+        return when {
+            qrContent.startsWith("checkin:") -> QRCodeType.CHECK_IN
+            qrContent.startsWith("register:") -> QRCodeType.REGISTRATION
+            qrContent.contains(":") -> QRCodeType.ATTENDANCE
+            else -> QRCodeType.UNKNOWN
+        }
+    }
+}
+
+enum class QRCodeType {
+    ATTENDANCE,    // event_id:user_id
+    CHECK_IN,      // checkin:event_id
+    REGISTRATION,  // register:event_id
+    UNKNOWN
 }

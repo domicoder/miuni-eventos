@@ -10,13 +10,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.lifecycleScope
 import com.domicoder.miunieventos.ui.navigation.AppNavigation
 import com.domicoder.miunieventos.ui.theme.MiUNIEventosTheme
 import com.domicoder.miunieventos.util.DeepLinkManager
+import com.domicoder.miunieventos.util.UserStateManager
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    
+    @Inject
+    lateinit var userStateManager: UserStateManager
     
     companion object {
         private const val TAG = "MainActivity"
@@ -29,7 +36,8 @@ class MainActivity : ComponentActivity() {
         // Handle deep links when app is opened
         handleDeepLink(intent)
         
-
+        // Restore authentication state from persistent storage
+        restoreAuthenticationState()
         
         setContent {
             MiUNIEventosTheme {
@@ -37,7 +45,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigation()
+                    AppNavigation(userStateManager = userStateManager)
                 }
             }
         }
@@ -54,5 +62,22 @@ class MainActivity : ComponentActivity() {
         DeepLinkManager.handleDeepLink(intent)
     }
     
-
+    /**
+     * Restores authentication state from persistent storage on app startup
+     * This ensures users don't need to login again if the app was closed unexpectedly
+     */
+    private fun restoreAuthenticationState() {
+        lifecycleScope.launch {
+            try {
+                val restored = userStateManager.restoreAuthenticationState()
+                if (restored) {
+                    Log.d(TAG, "Authentication state restored successfully")
+                } else {
+                    Log.d(TAG, "No valid authentication state found, user needs to login")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error restoring authentication state", e)
+            }
+        }
+    }
 }

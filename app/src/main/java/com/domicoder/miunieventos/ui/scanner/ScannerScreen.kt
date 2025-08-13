@@ -223,7 +223,7 @@ fun ScannerScreen(
                                     modifier = Modifier.padding(24.dp)
                                 ) {
                                     Text(
-                                        text = "Éxito",
+                                        text = "Asistencia Registrada",
                                         style = MaterialTheme.typography.headlineMedium,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
@@ -237,15 +237,14 @@ fun ScannerScreen(
                                         color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
                                     
-                                    val rsvp = (scanResult as ScanResult.Success).rsvp
-                                    if (rsvp.checkedInAt != null) {
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        Text(
-                                            text = "Hora de registro: ${rsvp.checkedInAt}",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                                        )
-                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    
+                                    Text(
+                                        text = (scanResult as ScanResult.Success).message,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        textAlign = TextAlign.Center,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                    )
                                 }
                             }
                             

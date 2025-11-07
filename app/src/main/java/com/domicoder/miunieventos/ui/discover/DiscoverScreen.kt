@@ -758,4 +758,4 @@ fun EventCardWithRSVPStatus(
             )
         }
     }
-} 
+}

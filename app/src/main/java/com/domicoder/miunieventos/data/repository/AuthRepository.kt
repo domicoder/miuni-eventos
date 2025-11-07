@@ -10,7 +10,8 @@ import javax.inject.Singleton
 class AuthRepository @Inject constructor(
     private val userDao: UserDao
 ) {
-    
+
+//    TODO: replace with Firebase auth
     suspend fun authenticateUser(email: String, password: String): AuthResult {
         return try {
             val user = userDao.getUserByEmail(email)
@@ -29,7 +30,8 @@ class AuthRepository @Inject constructor(
             AuthResult.Error("Error de autenticación: ${e.message}")
         }
     }
-    
+
+//    TODO: replace with Firebase auth
     suspend fun createUser(email: String, password: String, name: String, department: String): AuthResult {
         return try {
             // Check if user already exists
@@ -54,7 +56,8 @@ class AuthRepository @Inject constructor(
             AuthResult.Error("Error al crear usuario: ${e.message}")
         }
     }
-    
+
+//    TODO: check is needed, or remove it
     suspend fun getUserById(userId: String): User? {
         return userDao.getUserById(userId)
     }
@@ -62,6 +65,7 @@ class AuthRepository @Inject constructor(
     private fun isValidPassword(email: String, password: String): Boolean {
         // For MVP, use simple password validation
         // In production, this should use proper password hashing
+//        TODO: replace with Firebase auth
         return when (email) {
             "juanito.alimana@unicda.edu.do" -> password == "123456"
             "maria.gonzalez@unicda.edu.do" -> password == "123456"

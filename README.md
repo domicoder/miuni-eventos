@@ -142,6 +142,15 @@ app/src/main/java/com/domicoder/miunieventos/
 
     Or open the project in Android Studio and run it on an emulator or device.
 
+5. **Clean and rebuild**
+
+    ```bash
+      ./gradlew --stop
+      ./gradlew clean assembleDebug
+      # or
+      ./gradlew clean build
+    ```
+
 ### Environment Configuration
 
 The project uses the following key configurations:

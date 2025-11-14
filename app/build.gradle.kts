@@ -60,6 +60,19 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    
+    tasks.register("copyGoogleServicesToAssets", Copy::class) {
+        val assetsDir = file("src/main/assets")
+        assetsDir.mkdirs()
+        from("google-services.json")
+        into(assetsDir)
+        include("google-services.json")
+        onlyIf { file("google-services.json").exists() }
+    }
+    
+    tasks.named("preBuild") {
+        dependsOn("copyGoogleServicesToAssets")
+    }
 }
 
 dependencies {
@@ -92,6 +105,9 @@ dependencies {
     implementation(libs.firebase.messaging)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    
+    // Google Sign-In
+    implementation(libs.google.auth)
 
     
     // Maps

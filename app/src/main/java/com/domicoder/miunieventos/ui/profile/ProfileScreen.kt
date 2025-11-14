@@ -59,6 +59,9 @@ fun ProfileScreen(
         LoginPromptScreen(
             onLoginRequest = {
                 navController.navigate(NavRoutes.Login.route)
+            },
+            onRegisterRequest = {
+                navController.navigate(NavRoutes.Register.route)
             }
         )
         return

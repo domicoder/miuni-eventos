@@ -1,4 +1,4 @@
-package com.domicoder.miunieventos.ui.login
+package com.domicoder.miunieventos.ui.register
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -32,7 +31,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -57,17 +55,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.domicoder.miunieventos.data.repository.AuthResult
+import com.domicoder.miunieventos.ui.login.SocialLoginButton
 
 @Composable
-fun LoginScreen(
-    onLoginSuccess: (String, Boolean) -> Unit,
-    onRegisterRequest: (() -> Unit)? = null,
-    viewModel: LoginViewModel = hiltViewModel()
+fun RegisterScreen(
+    onRegisterSuccess: (String, Boolean) -> Unit,
+    onLoginRequest: (() -> Unit)? = null,
+    viewModel: RegisterViewModel = hiltViewModel()
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
-    var rememberMe by remember { mutableStateOf(true) }
+    var showConfirmPassword by remember { mutableStateOf(false) }
     
     val context = LocalContext.current
     val activity = context as? Activity
@@ -88,20 +88,21 @@ fun LoginScreen(
         }
     }
     
+    // Observar cambios en googleSignInIntent para lanzar la actividad
     LaunchedEffect(googleSignInIntent) {
         googleSignInIntent?.let { intent ->
-            android.util.Log.d("LoginScreen", "Launching Google Sign-In intent")
             googleSignInLauncher.launch(intent)
             viewModel.clearGoogleSignInIntent()
         }
     }
     
+    // Handle authentication result
     LaunchedEffect(authResult) {
         authResult?.let { result ->
             when (result) {
                 is AuthResult.Success -> {
                     viewModel.clearAuthResult()
-                    onLoginSuccess(result.user.id, rememberMe)
+                    onRegisterSuccess(result.user.id, true)
                 }
                 is AuthResult.Error -> {
                 }
@@ -109,21 +110,28 @@ fun LoginScreen(
         }
     }
     
-    fun handleLogin() {
-        if (email.isNotBlank() && password.isNotBlank()) {
-            viewModel.login(email, password, rememberMe)
+    fun handleRegister() {
+        if (email.isNotBlank() && password.isNotBlank() && confirmPassword.isNotBlank()) {
+            if (password != confirmPassword) {
+                viewModel.setError("Las contraseñas no coinciden")
+                return
+            }
+            if (password.length < 6) {
+                viewModel.setError("La contraseña debe tener al menos 6 caracteres")
+                return
+            }
+            val name = email.split("@")[0].replace(".", " ").replace("_", " ")
+            val department = "Departamento"
+            viewModel.createAccount(email, password, name, department)
         }
     }
     
     fun handleGoogleSignIn() {
-        android.util.Log.d("LoginScreen", "handleGoogleSignIn called")
-        if (activity == null) {
-            android.util.Log.e("LoginScreen", "Activity is null!")
-            viewModel.setError("No se pudo iniciar Google Sign-In: Activity es null")
-            return
+        activity?.let {
+            viewModel.startGoogleSignIn(it)
+        } ?: run {
+            viewModel.setError("No se pudo iniciar Google Sign-In")
         }
-        android.util.Log.d("LoginScreen", "Activity found, starting Google Sign-In")
-        viewModel.startGoogleSignIn(activity!!)
     }
     
     val colorScheme = MaterialTheme.colorScheme
@@ -143,7 +151,7 @@ fun LoginScreen(
             modifier = Modifier.padding(horizontal = 32.dp)
         ) {
             Text(
-                text = "Iniciar Sesión",
+                text = "Crear Cuenta",
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
                 color = colorScheme.primary,
@@ -153,7 +161,7 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(8.dp))
             
             Text(
-                text = "¡Bienvenido de nuevo, te extrañamos!",
+                text = "Crea una cuenta para que puedas explorar todos los eventos existentes",
                 style = MaterialTheme.typography.bodyLarge,
                 color = colorScheme.onSurface,
                 fontSize = 16.sp,
@@ -215,36 +223,52 @@ fun LoginScreen(
                 visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
+                    imeAction = ImeAction.Next
                 ),
                 singleLine = true
             )
             
-            // Forgot Password Link
-            Row(
+            // Confirm Password Field
+            OutlinedTextField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                label = { Text("Confirmar contraseña") },
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                Text(
-                    text = "¿Olvidaste tu contraseña?",
-                    color = colorScheme.primary,
-                    fontSize = 14.sp,
-                    modifier = Modifier.clickable {
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = colorScheme.outline,
+                    unfocusedBorderColor = colorScheme.outline,
+                    focusedContainerColor = colorScheme.surface,
+                    unfocusedContainerColor = colorScheme.surface
+                ),
+                trailingIcon = {
+                    IconButton(onClick = { showConfirmPassword = !showConfirmPassword }) {
+                        Icon(
+                            imageVector = if (showConfirmPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = if (showConfirmPassword) "Ocultar contraseña" else "Mostrar contraseña",
+                            tint = colorScheme.onSurfaceVariant
+                        )
                     }
-                )
-            }
+                },
+                visualTransformation = if (showConfirmPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done
+                ),
+                singleLine = true
+            )
         }
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        // Sign In Button
+        // Sign Up Button
         Button(
-            onClick = { handleLogin() },
+            onClick = { handleRegister() },
             modifier = Modifier
                 .fillMaxWidth(0.85f)
                 .height(56.dp),
             shape = RoundedCornerShape(12.dp),
-            enabled = !isLoading && email.isNotBlank() && password.isNotBlank(),
+            enabled = !isLoading && email.isNotBlank() && password.isNotBlank() && confirmPassword.isNotBlank(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = colorScheme.primary
             )
@@ -256,7 +280,7 @@ fun LoginScreen(
                 )
             } else {
                 Text(
-                    text = "Iniciar sesión",
+                    text = "Registrarse",
                     color = colorScheme.onPrimary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
@@ -266,13 +290,13 @@ fun LoginScreen(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Create New Account Link
+        // Already Have Account Link
         Text(
-            text = "Crear nueva cuenta",
+            text = "¿Ya tienes una cuenta?",
             color = colorScheme.onSurface,
             fontSize = 14.sp,
             modifier = Modifier.clickable {
-                onRegisterRequest?.invoke()
+                onLoginRequest?.invoke()
             }
         )
         
@@ -312,64 +336,19 @@ fun LoginScreen(
             )
         }
         
-        Spacer(modifier = Modifier.height(24.dp))
-        
-        // Create New Account Button (above social buttons as requested)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(0.85f)
-                .height(48.dp)
-                .background(
-                    color = Color.Transparent,
-                    shape = RoundedCornerShape(12.dp)
-                )
-                .border(1.dp, colorScheme.primary, RoundedCornerShape(12.dp))
-                .clickable {
-                    onRegisterRequest?.invoke()
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Crear nueva cuenta",
-                color = colorScheme.primary,
-                fontWeight = FontWeight.Medium,
-                fontSize = 14.sp
-            )
-        }
-        
         // Error Message
         if (error != null) {
             Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = error ?: "",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(horizontal = 32.dp),
+                textAlign = TextAlign.Center
+            )
         }
         
         Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
-@Composable
-fun SocialLoginButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val colorScheme = MaterialTheme.colorScheme
-    
-    Box(
-        modifier = modifier
-            .size(56.dp)
-            .background(
-                color = colorScheme.surface,
-                shape = RoundedCornerShape(12.dp)
-            )
-            .border(1.dp, colorScheme.outline, RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            color = colorScheme.onSurface,
-            fontWeight = FontWeight.Bold,
-            fontSize = 20.sp
-        )
-    }
-}

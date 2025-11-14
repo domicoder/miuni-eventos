@@ -1,13 +1,11 @@
-package com.domicoder.miunieventos.ui.login
+package com.domicoder.miunieventos.ui.register
 
 import android.content.Intent
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.domicoder.miunieventos.data.repository.AuthResult
-import com.domicoder.miunieventos.domain.model.User
-import com.domicoder.miunieventos.domain.usecase.auth.SignInWithEmailUseCase
 import com.domicoder.miunieventos.domain.usecase.auth.SignInWithGoogleUseCase
+import com.domicoder.miunieventos.domain.usecase.auth.SignUpWithEmailUseCase
 import com.domicoder.miunieventos.util.GoogleSignInHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,15 +14,11 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class LoginViewModel @Inject constructor(
-    private val signInWithEmailUseCase: SignInWithEmailUseCase,
+class RegisterViewModel @Inject constructor(
+    private val signUpWithEmailUseCase: SignUpWithEmailUseCase,
     private val signInWithGoogleUseCase: SignInWithGoogleUseCase,
     private val googleSignInHelper: GoogleSignInHelper
 ) : ViewModel() {
-    
-    companion object {
-        private const val TAG = "LoginViewModel"
-    }
     
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -38,18 +32,16 @@ class LoginViewModel @Inject constructor(
     private val _googleSignInIntent = MutableStateFlow<Intent?>(null)
     val googleSignInIntent: StateFlow<Intent?> = _googleSignInIntent
     
-    // Necesitamos hacer el StateFlow mutable para poder limpiarlo desde la UI
-    // Usaremos una función para limpiarlo
     fun clearGoogleSignInIntent() {
         _googleSignInIntent.value = null
     }
     
-    fun login(email: String, password: String, rememberMe: Boolean = true) {
+    fun createAccount(email: String, password: String, name: String, department: String) {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
             
-            signInWithEmailUseCase(email, password)
+            signUpWithEmailUseCase(email, password, name, department)
                 .fold(
                     onSuccess = { user ->
                         _isLoading.value = false
@@ -66,19 +58,11 @@ class LoginViewModel @Inject constructor(
                     },
                     onFailure = { exception ->
                         _isLoading.value = false
-                        _error.value = exception.message ?: "Error al iniciar sesión"
-                        _authResult.value = AuthResult.Error(exception.message ?: "Error al iniciar sesión")
+                        _error.value = exception.message ?: "Error al crear la cuenta"
+                        _authResult.value = AuthResult.Error(exception.message ?: "Error al crear la cuenta")
                     }
                 )
         }
-    }
-    
-    fun setError(message: String) {
-        _error.value = message
-    }
-    
-    fun clearAuthResult() {
-        _authResult.value = null
     }
     
     /**
@@ -86,15 +70,10 @@ class LoginViewModel @Inject constructor(
      * Retorna un Intent que debe ser usado con Activity Result Launcher
      */
     fun startGoogleSignIn(activity: android.app.Activity) {
-        Log.d(TAG, "startGoogleSignIn called")
         try {
-            Log.d(TAG, "Getting sign in intent...")
             val intent = googleSignInHelper.getSignInIntent(activity)
-            Log.d(TAG, "Sign in intent received, setting to StateFlow")
             _googleSignInIntent.value = intent
-            Log.d(TAG, "Sign in intent set successfully")
         } catch (e: Exception) {
-            Log.e(TAG, "Error starting Google Sign-In", e)
             _error.value = "Error al iniciar Google Sign-In: ${e.message}"
         }
     }
@@ -157,4 +136,13 @@ class LoginViewModel @Inject constructor(
             }
         }
     }
+    
+    fun setError(message: String) {
+        _error.value = message
+    }
+    
+    fun clearAuthResult() {
+        _authResult.value = null
+    }
 }
+

@@ -22,6 +22,7 @@ import com.domicoder.miunieventos.ui.components.LoginPromptScreen
 import com.domicoder.miunieventos.ui.discover.DiscoverScreen
 import com.domicoder.miunieventos.ui.eventdetail.EventDetailScreen
 import com.domicoder.miunieventos.ui.login.LoginScreen
+import com.domicoder.miunieventos.ui.register.RegisterScreen
 import com.domicoder.miunieventos.ui.maps.MapsScreen
 import com.domicoder.miunieventos.ui.myevents.MyEventsScreen
 import com.domicoder.miunieventos.ui.profile.ProfileScreen
@@ -127,6 +128,9 @@ fun AppNavigation(
                     LoginPromptScreen(
                         onLoginRequest = {
                             navController.navigate(NavRoutes.Login.route)
+                        },
+                        onRegisterRequest = {
+                            navController.navigate(NavRoutes.Register.route)
                         }
                     )
                 }
@@ -140,6 +144,9 @@ fun AppNavigation(
                     LoginPromptScreen(
                         onLoginRequest = {
                             navController.navigate(NavRoutes.Login.route)
+                        },
+                        onRegisterRequest = {
+                            navController.navigate(NavRoutes.Register.route)
                         }
                     )
                 }
@@ -160,6 +167,9 @@ fun AppNavigation(
                     LoginPromptScreen(
                         onLoginRequest = {
                             navController.navigate(NavRoutes.Login.route)
+                        },
+                        onRegisterRequest = {
+                            navController.navigate(NavRoutes.Register.route)
                         }
                     )
                 }
@@ -196,7 +206,19 @@ fun AppNavigation(
             
             composable(NavRoutes.Login.route) {
                 LoginScreen(
-                    onLoginSuccess = onLoginSuccess
+                    onLoginSuccess = onLoginSuccess,
+                    onRegisterRequest = {
+                        navController.navigate(NavRoutes.Register.route)
+                    }
+                )
+            }
+            
+            composable(NavRoutes.Register.route) {
+                RegisterScreen(
+                    onRegisterSuccess = onLoginSuccess,
+                    onLoginRequest = {
+                        navController.navigate(NavRoutes.Login.route)
+                    }
                 )
             }
             
@@ -210,6 +232,9 @@ fun AppNavigation(
                     LoginPromptScreen(
                         onLoginRequest = {
                             navController.navigate(NavRoutes.Login.route)
+                        },
+                        onRegisterRequest = {
+                            navController.navigate(NavRoutes.Register.route)
                         }
                     )
                 }

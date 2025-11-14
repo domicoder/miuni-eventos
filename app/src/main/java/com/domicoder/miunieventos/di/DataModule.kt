@@ -7,14 +7,19 @@ import com.domicoder.miunieventos.data.local.EventDao
 import com.domicoder.miunieventos.data.local.RSVPDao
 import com.domicoder.miunieventos.data.local.UserDao
 import com.domicoder.miunieventos.data.local.AttendanceDao
-import com.domicoder.miunieventos.data.repository.AuthRepository
+import com.domicoder.miunieventos.data.repository.AuthRepository as OldAuthRepository
+import com.domicoder.miunieventos.data.repository.AuthRepositoryImpl
+import com.domicoder.miunieventos.data.remote.AuthRemoteDataSource
 import com.domicoder.miunieventos.data.repository.EventRepository
 import com.domicoder.miunieventos.data.repository.RSVPRepository
 import com.domicoder.miunieventos.data.repository.UserRepository
+import com.domicoder.miunieventos.domain.repository.AuthRepository
 import com.domicoder.miunieventos.util.LoginStateManager
 import com.domicoder.miunieventos.util.UserStateManager
 import com.domicoder.miunieventos.data.repository.AttendanceRepository
 import com.domicoder.miunieventos.util.AuthPersistenceManager
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -58,10 +63,41 @@ object DataModule {
     
     @Provides @Singleton fun provideDatabaseInitializer(eventDao: EventDao, userDao: UserDao, rsvpDao: RSVPDao, attendanceDao: AttendanceDao): DatabaseInitializer { return DatabaseInitializer(eventDao, userDao, rsvpDao, attendanceDao) }
     
+    // Firebase providers
     @Provides
     @Singleton
-    fun provideAuthRepository(userDao: UserDao): AuthRepository {
-        return AuthRepository(userDao)
+    fun provideFirebaseAuth(): FirebaseAuth {
+        return FirebaseAuth.getInstance()
+    }
+    
+    @Provides
+    @Singleton
+    fun provideFirebaseFirestore(): FirebaseFirestore {
+        return FirebaseFirestore.getInstance()
+    }
+    
+    // Remote Data Source
+    @Provides
+    @Singleton
+    fun provideAuthRemoteDataSource(
+        firebaseAuth: FirebaseAuth,
+        firestore: FirebaseFirestore
+    ): AuthRemoteDataSource {
+        return AuthRemoteDataSource(firebaseAuth, firestore)
+    }
+    
+    // Domain Repository Implementation (new architecture)
+    @Provides
+    @Singleton
+    fun provideAuthRepository(authRepositoryImpl: AuthRepositoryImpl): AuthRepository {
+        return authRepositoryImpl
+    }
+    
+    // Legacy AuthRepository (for backward compatibility)
+    @Provides
+    @Singleton
+    fun provideOldAuthRepository(userDao: UserDao): OldAuthRepository {
+        return OldAuthRepository(userDao)
     }
     
     @Provides
@@ -79,7 +115,7 @@ object DataModule {
     @Provides
     @Singleton
     fun provideLoginStateManager(
-        authRepository: AuthRepository,
+        authRepository: OldAuthRepository,
         userStateManager: UserStateManager,
         authPersistenceManager: AuthPersistenceManager
     ): LoginStateManager {

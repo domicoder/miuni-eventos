@@ -108,8 +108,12 @@ object DataModule {
     
     @Provides
     @Singleton
-    fun provideUserStateManager(userRepository: UserRepository, authPersistenceManager: AuthPersistenceManager): UserStateManager {
-        return UserStateManager(userRepository, authPersistenceManager)
+    fun provideUserStateManager(
+        userRepository: UserRepository,
+        authPersistenceManager: AuthPersistenceManager,
+        authRepository: AuthRepository
+    ): UserStateManager {
+        return UserStateManager(userRepository, authPersistenceManager, authRepository)
     }
     
     @Provides

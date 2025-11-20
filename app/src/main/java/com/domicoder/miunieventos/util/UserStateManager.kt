@@ -1,8 +1,10 @@
 package com.domicoder.miunieventos.util
 
 import android.util.Log
+import com.domicoder.miunieventos.data.mapper.UserMapper
 import com.domicoder.miunieventos.data.model.User
 import com.domicoder.miunieventos.data.repository.UserRepository
+import com.domicoder.miunieventos.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,7 +15,8 @@ import javax.inject.Singleton
 @Singleton
 class UserStateManager @Inject constructor(
     private val userRepository: UserRepository,
-    private val authPersistenceManager: AuthPersistenceManager
+    private val authPersistenceManager: AuthPersistenceManager,
+    private val authRepository: AuthRepository
 ) {
     
     companion object {
@@ -35,13 +38,26 @@ class UserStateManager @Inject constructor(
     suspend fun setCurrentUserId(userId: String, rememberMe: Boolean = true) {
         try {
             if (userId.isNotEmpty()) {
-                val user = userRepository.getUserById(userId)
+                var user = userRepository.getUserById(userId)
+                
+                if (user == null) {
+                    Log.d(TAG, "User not found locally for ID: $userId, attempting to sync from Firestore")
+                    val domainUser = authRepository.getCurrentUser()
+                    if (domainUser != null && domainUser.id == userId) {
+                        Log.d(TAG, "Found user in Firebase Auth, syncing to local database")
+                        user = UserMapper.domainToData(domainUser)
+                        userRepository.insertUser(user)
+                        Log.d(TAG, "User synced to local database: ${user.name} (${user.id})")
+                    } else {
+                        Log.w(TAG, "User not found in Firebase Auth either for ID: $userId")
+                    }
+                }
+                
                 if (user != null) {
                     _currentUser.value = user
                     _isAuthenticated.value = true
                     _isOrganizer.value = user.isOrganizer
                     
-                    // Persist authentication data
                     authPersistenceManager.saveAuthData(
                         userId = user.id,
                         email = user.email,
@@ -53,7 +69,7 @@ class UserStateManager @Inject constructor(
                     
                     Log.d(TAG, "User set successfully: ${user.name} (${user.id}), rememberMe: $rememberMe")
                 } else {
-                    Log.w(TAG, "User not found for ID: $userId")
+                    Log.w(TAG, "User not found for ID: $userId after sync attempt")
                     _currentUser.value = null
                     _isAuthenticated.value = false
                     _isOrganizer.value = false

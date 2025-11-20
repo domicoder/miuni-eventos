@@ -103,30 +103,37 @@ class LoginViewModel @Inject constructor(
      * Procesa el resultado de Google Sign-In
      */
     fun handleGoogleSignInResult(data: Intent?) {
+        Log.d(TAG, "handleGoogleSignInResult called, data is null: ${data == null}")
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
+            Log.d(TAG, "Processing Google Sign-In result...")
             
             val credentialResult = googleSignInHelper.handleSignInResult(data)
+            Log.d(TAG, "Credential result received, isSuccess: ${credentialResult.isSuccess}")
             
             credentialResult.fold(
                 onSuccess = { credential ->
+                    Log.d(TAG, "Credential obtained, calling signInWithGoogleUseCase")
                     signInWithGoogleUseCase(credential)
                         .fold(
                             onSuccess = { user ->
+                                Log.d(TAG, "Google sign-in successful, user: ${user.email}")
                                 _isLoading.value = false
-                                _authResult.value = AuthResult.Success(
-                                    com.domicoder.miunieventos.data.model.User(
-                                        id = user.id,
-                                        name = user.name,
-                                        email = user.email,
-                                        photoUrl = user.photoUrl,
-                                        department = user.department,
-                                        isOrganizer = user.isOrganizer
-                                    )
+                                val dataUser = com.domicoder.miunieventos.data.model.User(
+                                    id = user.id,
+                                    name = user.name,
+                                    email = user.email,
+                                    photoUrl = user.photoUrl,
+                                    department = user.department,
+                                    isOrganizer = user.isOrganizer
                                 )
+                                Log.d(TAG, "Setting authResult to Success")
+                                _authResult.value = AuthResult.Success(dataUser)
+                                Log.d(TAG, "authResult set successfully")
                             },
                             onFailure = { exception ->
+                                Log.e(TAG, "Error in signInWithGoogleUseCase: ${exception.message}", exception)
                                 _isLoading.value = false
                                 _error.value = exception.message ?: "Error al autenticar con Google"
                                 _authResult.value = AuthResult.Error(exception.message ?: "Error al autenticar con Google")
@@ -134,6 +141,7 @@ class LoginViewModel @Inject constructor(
                         )
                 },
                 onFailure = { exception ->
+                    Log.e(TAG, "Error processing credential result: ${exception.message}", exception)
                     _isLoading.value = false
                     _error.value = exception.message ?: "Error al procesar el resultado de Google Sign-In"
                     _authResult.value = AuthResult.Error(exception.message ?: "Error al procesar el resultado de Google Sign-In")

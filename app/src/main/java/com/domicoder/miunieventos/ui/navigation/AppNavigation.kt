@@ -34,6 +34,8 @@ import com.domicoder.miunieventos.util.UserStateManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.runtime.rememberCoroutineScope
 import com.domicoder.miunieventos.ui.organizedevents.OrganizedEventsScreen
 import com.domicoder.miunieventos.ui.eventedit.EditEventScreen
@@ -73,14 +75,20 @@ fun AppNavigation(
     }
     
     // Handle login success
-    val onLoginSuccess = { userId: String, rememberMe: Boolean ->
-        // Set the current user in UserStateManager to persist the login state
-        // This will trigger the authentication state update
+    val onLoginSuccess: (String, Boolean) -> Unit = { userId, rememberMe ->
+        Log.d("AppNavigation", "onLoginSuccess called with userId: $userId, rememberMe: $rememberMe")
         coroutineScope.launch {
-            userStateManager.setCurrentUserId(userId, rememberMe)
-        }
-        navController.navigate(NavRoutes.Discover.route) {
-            popUpTo(NavRoutes.Login.route) { inclusive = true }
+            try {
+                userStateManager.setCurrentUserId(userId, rememberMe)
+                Log.d("AppNavigation", "User set successfully, navigating to Discover")
+                withContext(Dispatchers.Main) {
+                    navController.navigate(NavRoutes.Discover.route) {
+                        popUpTo(NavRoutes.Login.route) { inclusive = true }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("AppNavigation", "Error setting user after login", e)
+            }
         }
     }
     

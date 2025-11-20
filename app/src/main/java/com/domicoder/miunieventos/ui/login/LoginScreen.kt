@@ -77,13 +77,15 @@ fun LoginScreen(
     val authResult by viewModel.authResult.collectAsState()
     val googleSignInIntent by viewModel.googleSignInIntent.collectAsState()
     
-    // Activity Result Launcher para Google Sign-In
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
+        android.util.Log.d("LoginScreen", "Google Sign-In result received, resultCode: ${result.resultCode}")
         if (result.resultCode == Activity.RESULT_OK) {
+            android.util.Log.d("LoginScreen", "Result OK, processing Google Sign-In result")
             viewModel.handleGoogleSignInResult(result.data)
         } else {
+            android.util.Log.w("LoginScreen", "Result not OK, user may have cancelled")
             viewModel.setError("El inicio de sesión con Google fue cancelado")
         }
     }
@@ -98,12 +100,17 @@ fun LoginScreen(
     
     LaunchedEffect(authResult) {
         authResult?.let { result ->
+            android.util.Log.d("LoginScreen", "authResult changed: ${result.javaClass.simpleName}")
             when (result) {
                 is AuthResult.Success -> {
+                    android.util.Log.d("LoginScreen", "AuthResult.Success detected, user ID: ${result.user.id}")
                     viewModel.clearAuthResult()
+                    android.util.Log.d("LoginScreen", "Calling onLoginSuccess")
                     onLoginSuccess(result.user.id, rememberMe)
+                    android.util.Log.d("LoginScreen", "onLoginSuccess called")
                 }
                 is AuthResult.Error -> {
+                    android.util.Log.e("LoginScreen", "AuthResult.Error: ${result.message}")
                 }
             }
         }
@@ -244,7 +251,6 @@ fun LoginScreen(
                 .fillMaxWidth(0.85f)
                 .height(56.dp),
             shape = RoundedCornerShape(12.dp),
-            enabled = !isLoading && email.isNotBlank() && password.isNotBlank(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = colorScheme.primary
             )
@@ -266,15 +272,31 @@ fun LoginScreen(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Create New Account Link
-        Text(
-            text = "Crear nueva cuenta",
-            color = colorScheme.onSurface,
-            fontSize = 14.sp,
-            modifier = Modifier.clickable {
-                onRegisterRequest?.invoke()
+        // Create New Account
+        Button(
+            onClick = { onRegisterRequest?.invoke() },
+            modifier = Modifier
+                .fillMaxWidth(0.85f)
+                .height(56.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colorScheme.primary
+            )
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = colorScheme.onPrimary
+                )
+            } else {
+                Text(
+                    text = "Iniciar sesión",
+                    color = colorScheme.onPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
             }
-        )
+        }
         
         Spacer(modifier = Modifier.height(32.dp))
         
@@ -313,30 +335,7 @@ fun LoginScreen(
         }
         
         Spacer(modifier = Modifier.height(24.dp))
-        
-        // Create New Account Button (above social buttons as requested)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(0.85f)
-                .height(48.dp)
-                .background(
-                    color = Color.Transparent,
-                    shape = RoundedCornerShape(12.dp)
-                )
-                .border(1.dp, colorScheme.primary, RoundedCornerShape(12.dp))
-                .clickable {
-                    onRegisterRequest?.invoke()
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Crear nueva cuenta",
-                color = colorScheme.primary,
-                fontWeight = FontWeight.Medium,
-                fontSize = 14.sp
-            )
-        }
-        
+
         // Error Message
         if (error != null) {
             Spacer(modifier = Modifier.height(16.dp))

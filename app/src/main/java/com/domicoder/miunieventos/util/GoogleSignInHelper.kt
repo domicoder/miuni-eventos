@@ -159,17 +159,39 @@ class GoogleSignInHelper @Inject constructor(
     }
     
     fun handleSignInResult(data: Intent?): Result<com.google.firebase.auth.AuthCredential> {
+        Log.d(TAG, "handleSignInResult called, data is null: ${data == null}")
         return try {
+            if (data == null) {
+                Log.e(TAG, "Intent data is null")
+                return Result.failure(Exception("No se recibió ningún dato del resultado de Google Sign-In"))
+            }
+            
+            Log.d(TAG, "Getting signed in account from intent")
             val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+            Log.d(TAG, "Task received, getting result")
             val account = task.getResult(ApiException::class.java)
+            Log.d(TAG, "Account received: ${account?.email}")
             
             account?.let {
+                if (it.idToken == null) {
+                    Log.e(TAG, "Account idToken is null")
+                    return Result.failure(Exception("No se pudo obtener el token de Google"))
+                }
+                Log.d(TAG, "Account idToken length: ${it.idToken?.length}")
+                Log.d(TAG, "Account email: ${it.email}, id: ${it.id}")
+                Log.d(TAG, "Creating credential from idToken")
                 val credential = GoogleAuthProvider.getCredential(it.idToken, null)
+                Log.d(TAG, "Credential created successfully, provider: ${credential.provider}")
                 Result.success(credential)
-            } ?: Result.failure(Exception("No se pudo obtener la cuenta de Google"))
+            } ?: run {
+                Log.e(TAG, "Account is null")
+                Result.failure(Exception("No se pudo obtener la cuenta de Google"))
+            }
         } catch (e: ApiException) {
+            Log.e(TAG, "ApiException in handleSignInResult: ${e.message}", e)
             Result.failure(Exception("Error al iniciar sesión con Google: ${e.message}"))
         } catch (e: Exception) {
+            Log.e(TAG, "Exception in handleSignInResult: ${e.message}", e)
             Result.failure(e)
         }
     }

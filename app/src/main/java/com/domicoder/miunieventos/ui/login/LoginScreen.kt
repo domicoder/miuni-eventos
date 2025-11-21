@@ -36,6 +36,7 @@ import androidx.compose.material3.TextButton
 import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -46,7 +47,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -56,6 +59,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.domicoder.miunieventos.R
 import com.domicoder.miunieventos.data.repository.AuthResult
 
 @Composable
@@ -277,10 +281,11 @@ fun LoginScreen(
             onClick = { onRegisterRequest?.invoke() },
             modifier = Modifier
                 .fillMaxWidth(0.85f)
-                .height(56.dp),
+                .height(56.dp)
+                .border(1.dp, colorScheme.primary, RoundedCornerShape(12.dp)),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = colorScheme.primary
+                containerColor = colorScheme.background
             )
         ) {
             if (isLoading) {
@@ -290,8 +295,8 @@ fun LoginScreen(
                 )
             } else {
                 Text(
-                    text = "Iniciar sesión",
-                    color = colorScheme.onPrimary,
+                    text = "Crear cuenta",
+                    color = colorScheme.secondary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
@@ -315,9 +320,13 @@ fun LoginScreen(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val googleIcon = ImageVector.vectorResource(id = R.drawable.google_logo)
+            val microsoftIcon = ImageVector.vectorResource(id = R.drawable.microsoft_logo)
+
             // Google Button
             SocialLoginButton(
                 text = "G",
+                imageVector = googleIcon,
                 onClick = {
                     handleGoogleSignIn()
                 },
@@ -327,6 +336,7 @@ fun LoginScreen(
             // Microsoft Button
             SocialLoginButton(
                 text = "M",
+                imageVector = microsoftIcon,
                 onClick = {
                     viewModel.signInWithMicrosoft()
                 },
@@ -348,6 +358,7 @@ fun LoginScreen(
 @Composable
 fun SocialLoginButton(
     text: String,
+    imageVector: ImageVector? = null,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -364,11 +375,19 @@ fun SocialLoginButton(
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = text,
-            color = colorScheme.onSurface,
-            fontWeight = FontWeight.Bold,
-            fontSize = 20.sp
-        )
+        if (imageVector != null) {
+            Image(
+                imageVector = imageVector,
+                contentDescription = "Login with $text",
+                modifier = Modifier.size(24.dp)
+            )
+        } else {
+            Text(
+                text = text,
+                color = colorScheme.onSurface,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
+        }
     }
 }

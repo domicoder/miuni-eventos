@@ -94,7 +94,6 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
     
-    // Firebase (primary data storage)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.messaging)

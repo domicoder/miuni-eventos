@@ -53,9 +53,9 @@ fun LoginPromptScreen(
             contentAlignment = Alignment.Center
         ) {
             Image(
-                painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                painter = painterResource(id = R.drawable.onboarding_login),
                 contentDescription = "Events Illustration",
-                modifier = Modifier.size(300.dp)
+                modifier = Modifier.size(300.dp),
             )
         }
         

@@ -44,7 +44,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -54,6 +56,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.domicoder.miunieventos.R
 import com.domicoder.miunieventos.data.repository.AuthResult
 import com.domicoder.miunieventos.ui.login.SocialLoginButton
 
@@ -268,7 +271,6 @@ fun RegisterScreen(
                 .fillMaxWidth(0.85f)
                 .height(56.dp),
             shape = RoundedCornerShape(12.dp),
-            enabled = !isLoading && email.isNotBlank() && password.isNotBlank() && confirmPassword.isNotBlank(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = colorScheme.primary
             )
@@ -317,9 +319,13 @@ fun RegisterScreen(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val googleIcon = ImageVector.vectorResource(id = R.drawable.google_logo)
+            val microsoftIcon = ImageVector.vectorResource(id = R.drawable.microsoft_logo)
+
             // Google Button
             SocialLoginButton(
                 text = "G",
+                imageVector = googleIcon,
                 onClick = {
                     handleGoogleSignIn()
                 },
@@ -329,6 +335,7 @@ fun RegisterScreen(
             // Microsoft Button
             SocialLoginButton(
                 text = "M",
+                imageVector = microsoftIcon,
                 onClick = {
                     viewModel.signInWithMicrosoft()
                 },

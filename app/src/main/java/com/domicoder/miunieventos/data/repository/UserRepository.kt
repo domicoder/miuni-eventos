@@ -1,30 +1,30 @@
 package com.domicoder.miunieventos.data.repository
 
-import com.domicoder.miunieventos.data.local.UserDao
 import com.domicoder.miunieventos.data.model.User
+import com.domicoder.miunieventos.data.remote.UserRemoteDataSource
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 open class UserRepository @Inject constructor(
-    private val userDao: UserDao
+    private val remoteDataSource: UserRemoteDataSource
 ) {
-    open fun getAllUsers(): Flow<List<User>> = userDao.getAllUsers()
+    open fun getAllUsers(): Flow<List<User>> = remoteDataSource.getAllUsers()
     
-    open fun getOrganizers(): Flow<List<User>> = userDao.getOrganizers()
+    open fun getOrganizers(): Flow<List<User>> = remoteDataSource.getOrganizers()
     
-    open suspend fun getUserById(id: String): User? = userDao.getUserById(id)
+    open suspend fun getUserById(id: String): User? = remoteDataSource.getUserById(id)
     
-    open suspend fun getUserByEmail(email: String): User? = userDao.getUserByEmail(email)
+    open suspend fun getUserByEmail(email: String): User? = remoteDataSource.getUserByEmail(email)
     
-    open suspend fun insertUser(user: User) = userDao.insertUser(user)
+    open suspend fun insertUser(user: User): Result<String> = remoteDataSource.insertUser(user)
     
-    open suspend fun insertUsers(users: List<User>) = userDao.insertUsers(users)
+    open suspend fun insertUsers(users: List<User>): Result<Unit> = remoteDataSource.insertUsers(users)
     
-    open suspend fun updateUser(user: User) = userDao.updateUser(user)
+    open suspend fun updateUser(user: User): Result<Unit> = remoteDataSource.updateUser(user)
     
-    open suspend fun deleteUser(user: User) = userDao.deleteUser(user)
+    open suspend fun deleteUser(user: User): Result<Unit> = remoteDataSource.deleteUser(user)
     
-    open suspend fun deleteUserById(id: String) = userDao.deleteUserById(id)
-} 
+    open suspend fun deleteUserById(id: String): Result<Unit> = remoteDataSource.deleteUserById(id)
+}

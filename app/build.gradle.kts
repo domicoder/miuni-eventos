@@ -94,12 +94,7 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
     
-    // Room
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
-    
-    // Firebase
+    // Firebase (primary data storage)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.messaging)

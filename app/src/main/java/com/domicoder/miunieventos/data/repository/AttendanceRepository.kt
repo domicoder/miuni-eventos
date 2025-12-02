@@ -1,14 +1,16 @@
 package com.domicoder.miunieventos.data.repository
 
-import com.domicoder.miunieventos.data.local.AttendanceDao
-import com.domicoder.miunieventos.data.local.AttendeeWithDetails
 import com.domicoder.miunieventos.data.model.Attendance
+import com.domicoder.miunieventos.data.remote.AttendanceRemoteDataSource
+import com.domicoder.miunieventos.data.remote.AttendeeWithDetails
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDateTime
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class AttendanceRepository @Inject constructor(
-    private val attendanceDao: AttendanceDao
+    private val remoteDataSource: AttendanceRemoteDataSource
 ) {
     
     suspend fun recordAttendance(
@@ -16,30 +18,36 @@ class AttendanceRepository @Inject constructor(
         userId: String,
         organizerId: String,
         notes: String? = null
-    ) {
-        val attendance = Attendance(
+    ): Result<String> {
+        return remoteDataSource.recordAttendance(
             eventId = eventId,
             userId = userId,
-            checkInTime = LocalDateTime.now(),
             organizerId = organizerId,
             notes = notes
         )
-        attendanceDao.insertAttendance(attendance)
     }
     
     fun getAttendanceByEvent(eventId: String): Flow<List<Attendance>> {
-        return attendanceDao.getAttendanceByEvent(eventId)
+        return remoteDataSource.getAttendanceByEvent(eventId)
     }
     
     fun getAttendeesWithDetails(eventId: String): Flow<List<AttendeeWithDetails>> {
-        return attendanceDao.getAttendeesWithDetails(eventId)
+        return remoteDataSource.getAttendeesWithDetails(eventId)
+    }
+    
+    suspend fun getFullAttendeesWithDetails(eventId: String): List<AttendeeWithDetails> {
+        return remoteDataSource.getFullAttendeesWithDetails(eventId)
     }
     
     suspend fun getAttendanceCountByEvent(eventId: String): Int {
-        return attendanceDao.getAttendanceCountByEvent(eventId)
+        return remoteDataSource.getAttendanceCountByEvent(eventId)
     }
     
     suspend fun checkIfUserAttended(eventId: String, userId: String): Boolean {
-        return attendanceDao.getAttendanceByEventAndUser(eventId, userId) != null
+        return remoteDataSource.checkIfUserAttended(eventId, userId)
+    }
+    
+    suspend fun clearAllAttendance(): Result<Unit> {
+        return remoteDataSource.clearAllAttendance()
     }
 }

@@ -10,7 +10,7 @@ import com.domicoder.miunieventos.data.repository.EventRepository
 import com.domicoder.miunieventos.data.repository.RSVPRepository
 import com.domicoder.miunieventos.data.repository.UserRepository
 import com.domicoder.miunieventos.data.repository.AttendanceRepository
-import com.domicoder.miunieventos.data.local.AttendeeWithDetails
+import com.domicoder.miunieventos.data.remote.AttendeeWithDetails
 import com.domicoder.miunieventos.util.RSVPStateManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -79,8 +79,8 @@ class EventDetailViewModel @Inject constructor(
                     val rsvp = rsvpRepository.getRSVPByEventAndUser(eventId, _currentUserId.value)
                     _userRSVP.value = rsvp
                     
-                    // Load attendance data for organizers
-                    val attendees = attendanceRepository.getAttendeesWithDetails(eventId).first()
+                    // Load attendance data for organizers (using suspend function for full details)
+                    val attendees = attendanceRepository.getFullAttendeesWithDetails(eventId)
                     _attendees.value = attendees
                     
                     val attendanceCount = attendanceRepository.getAttendanceCountByEvent(eventId)
@@ -107,9 +107,14 @@ class EventDetailViewModel @Inject constructor(
             try {
                 val currentRSVP = _userRSVP.value
                 val newRSVP = if (currentRSVP != null) {
-                    currentRSVP.copy(status = status)
+                    RSVP.create(
+                        id = currentRSVP.id,
+                        eventId = eventId,
+                        userId = _currentUserId.value,
+                        status = status
+                    )
                 } else {
-                    RSVP(
+                    RSVP.create(
                         eventId = eventId,
                         userId = _currentUserId.value,
                         status = status
@@ -163,7 +168,7 @@ class EventDetailViewModel @Inject constructor(
                 )
                 
                 // Refresh attendance data
-                val attendees = attendanceRepository.getAttendeesWithDetails(eventId).first()
+                val attendees = attendanceRepository.getFullAttendeesWithDetails(eventId)
                 _attendees.value = attendees
                 
                 val attendanceCount = attendanceRepository.getAttendanceCountByEvent(eventId)
@@ -173,4 +178,4 @@ class EventDetailViewModel @Inject constructor(
             }
         }
     }
-} 
+}

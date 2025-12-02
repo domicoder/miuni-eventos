@@ -1,23 +1,20 @@
 package com.domicoder.miunieventos.data.repository
 
-import com.domicoder.miunieventos.data.local.UserDao
 import com.domicoder.miunieventos.data.model.User
+import com.domicoder.miunieventos.data.remote.UserRemoteDataSource
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class AuthRepository @Inject constructor(
-    private val userDao: UserDao
+    private val userRemoteDataSource: UserRemoteDataSource
 ) {
 
-//    TODO: replace with Firebase auth
     suspend fun authenticateUser(email: String, password: String): AuthResult {
         return try {
-            val user = userDao.getUserByEmail(email)
+            val user = userRemoteDataSource.getUserByEmail(email)
             if (user != null) {
-                // In a real app, you would hash and verify the password
-                // For MVP, we'll use a simple check
                 if (isValidPassword(email, password)) {
                     AuthResult.Success(user)
                 } else {
@@ -31,11 +28,10 @@ class AuthRepository @Inject constructor(
         }
     }
 
-//    TODO: replace with Firebase auth
     suspend fun createUser(email: String, password: String, name: String, department: String): AuthResult {
         return try {
             // Check if user already exists
-            val existingUser = userDao.getUserByEmail(email)
+            val existingUser = userRemoteDataSource.getUserByEmail(email)
             if (existingUser != null) {
                 return AuthResult.Error("El usuario ya existe")
             }
@@ -50,22 +46,24 @@ class AuthRepository @Inject constructor(
                 isOrganizer = false // Default to false, can be changed later
             )
             
-            userDao.insertUser(newUser)
-            AuthResult.Success(newUser)
+            val result = userRemoteDataSource.insertUser(newUser)
+            if (result.isSuccess) {
+                AuthResult.Success(newUser)
+            } else {
+                AuthResult.Error("Error al crear usuario: ${result.exceptionOrNull()?.message}")
+            }
         } catch (e: Exception) {
             AuthResult.Error("Error al crear usuario: ${e.message}")
         }
     }
 
-//    TODO: check is needed, or remove it
     suspend fun getUserById(userId: String): User? {
-        return userDao.getUserById(userId)
+        return userRemoteDataSource.getUserById(userId)
     }
     
     private fun isValidPassword(email: String, password: String): Boolean {
-        // For MVP, use simple password validation
-        // In production, this should use proper password hashing
-//        TODO: replace with Firebase auth
+        // For legacy support with demo accounts
+        // In production, use Firebase Auth for password verification
         return when (email) {
             "juanito.alimana@unicda.edu.do" -> password == "123456"
             "maria.gonzalez@unicda.edu.do" -> password == "123456"

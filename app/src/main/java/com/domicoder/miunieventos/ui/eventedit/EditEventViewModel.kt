@@ -80,7 +80,7 @@ class EditEventViewModel @Inject constructor(
             try {
                 val currentEvent = _event.value
                 if (currentEvent != null) {
-                    val updatedEvent = currentEvent.copy(
+                    val updatedEvent = currentEvent.copyWithDateTime(
                         title = title,
                         description = description,
                         location = location,
@@ -91,9 +91,13 @@ class EditEventViewModel @Inject constructor(
                         updatedAt = LocalDateTime.now()
                     )
                     
-                    eventRepository.updateEvent(updatedEvent)
-                    _event.value = updatedEvent
-                    _updateSuccess.value = true
+                    val result = eventRepository.updateEvent(updatedEvent)
+                    if (result.isSuccess) {
+                        _event.value = updatedEvent
+                        _updateSuccess.value = true
+                    } else {
+                        _error.value = "Error al actualizar evento: ${result.exceptionOrNull()?.message}"
+                    }
                 } else {
                     _error.value = "No se pudo cargar el evento para editar"
                 }

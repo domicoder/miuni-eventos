@@ -1,47 +1,62 @@
-package com.domicoder.miunieventos.data.local
+package com.domicoder.miunieventos.data.repository
 
+import android.util.Log
 import com.domicoder.miunieventos.data.model.Event
 import com.domicoder.miunieventos.data.model.RSVP
 import com.domicoder.miunieventos.data.model.RSVPStatus
 import com.domicoder.miunieventos.data.model.User
-import com.domicoder.miunieventos.data.model.Attendance
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import com.domicoder.miunieventos.data.remote.AttendanceRemoteDataSource
+import com.domicoder.miunieventos.data.remote.EventRemoteDataSource
+import com.domicoder.miunieventos.data.remote.RSVPRemoteDataSource
+import com.domicoder.miunieventos.data.remote.UserRemoteDataSource
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class DatabaseInitializer @Inject constructor(
-    private val eventDao: EventDao,
-    private val userDao: UserDao,
-    private val rsvpDao: RSVPDao,
-    private val attendanceDao: AttendanceDao
+class FirestoreInitializer @Inject constructor(
+    private val eventRemoteDataSource: EventRemoteDataSource,
+    private val userRemoteDataSource: UserRemoteDataSource,
+    private val rsvpRemoteDataSource: RSVPRemoteDataSource,
+    private val attendanceRemoteDataSource: AttendanceRemoteDataSource
 ) {
+    companion object {
+        private const val TAG = "FirestoreInitializer"
+    }
     
     suspend fun initializeDatabase() {
-        if (isDatabaseEmpty()) {
-            insertInitialData()
+        try {
+            if (isDatabaseEmpty()) {
+                Log.d(TAG, "Database is empty, inserting initial data...")
+                insertInitialData()
+            } else {
+                Log.d(TAG, "Database already has data, skipping initialization")
+            }
+            
+            // Clear any existing attendance data to fix QR scanning issues
+            clearAttendanceData()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error during database initialization", e)
         }
-        
-        // Clear any existing attendance data to fix QR scanning issues
-        clearAttendanceData()
     }
     
     private suspend fun isDatabaseEmpty(): Boolean {
-        val users = userDao.getAllUsers().first()
-        return users.isEmpty()
+        return try {
+            val users = userRemoteDataSource.getAllUsers().first()
+            users.isEmpty()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking if database is empty", e)
+            true // Assume empty if we can't check
+        }
     }
     
     private suspend fun clearAttendanceData() {
         try {
-            // Clear all existing attendance records to ensure clean state
-            attendanceDao.clearAllAttendance()
-            println("DEBUG: Attendance data cleared successfully")
+            attendanceRemoteDataSource.clearAllAttendance()
+            Log.d(TAG, "Attendance data cleared successfully")
         } catch (e: Exception) {
-            println("DEBUG: Error clearing attendance data: ${e.message}")
+            Log.e(TAG, "Error clearing attendance data: ${e.message}")
         }
     }
     
@@ -73,12 +88,18 @@ class DatabaseInitializer @Inject constructor(
                 isOrganizer = false
             )
         )
-        userDao.insertUsers(users)
+        
+        val usersResult = userRemoteDataSource.insertUsers(users)
+        if (usersResult.isSuccess) {
+            Log.d(TAG, "Initial users inserted successfully")
+        } else {
+            Log.e(TAG, "Failed to insert initial users: ${usersResult.exceptionOrNull()?.message}")
+        }
         
         // Insert initial events
         val now = LocalDateTime.now()
         val events = listOf(
-            Event(
+            Event.create(
                 id = "event1",
                 title = "Conferencia de Inteligencia Artificial",
                 description = "Conferencia sobre los últimos avances en inteligencia artificial y su aplicación en la industria.",
@@ -94,7 +115,7 @@ class DatabaseInitializer @Inject constructor(
                 createdAt = now,
                 updatedAt = now
             ),
-            Event(
+            Event.create(
                 id = "event2",
                 title = "Taller de Fotografía",
                 description = "Aprende los fundamentos de la fotografía digital y técnicas de composición.",
@@ -110,7 +131,7 @@ class DatabaseInitializer @Inject constructor(
                 createdAt = now,
                 updatedAt = now
             ),
-            Event(
+            Event.create(
                 id = "event3",
                 title = "Torneo de Fútbol Interfacultades",
                 description = "Participa en el torneo de fútbol entre las diferentes facultades de la universidad.",
@@ -126,7 +147,7 @@ class DatabaseInitializer @Inject constructor(
                 createdAt = now,
                 updatedAt = now
             ),
-            Event(
+            Event.create(
                 id = "event4",
                 title = "Charla: Salud Mental en Estudiantes",
                 description = "Charla informativa sobre la importancia de la salud mental en estudiantes universitarios.",
@@ -142,7 +163,7 @@ class DatabaseInitializer @Inject constructor(
                 createdAt = now,
                 updatedAt = now
             ),
-            Event(
+            Event.create(
                 id = "event5",
                 title = "Fiesta de Fin de Semestre",
                 description = "Celebra el fin del semestre con música, comida y diversión.",
@@ -159,31 +180,43 @@ class DatabaseInitializer @Inject constructor(
                 updatedAt = now
             )
         )
-        eventDao.insertEvents(events)
+        
+        val eventsResult = eventRemoteDataSource.insertEvents(events)
+        if (eventsResult.isSuccess) {
+            Log.d(TAG, "Initial events inserted successfully")
+        } else {
+            Log.e(TAG, "Failed to insert initial events: ${eventsResult.exceptionOrNull()?.message}")
+        }
         
         // Insert initial RSVPs
         val rsvps = listOf(
-            RSVP(
+            RSVP.create(
                 eventId = "event1",
                 userId = "user3",
                 status = RSVPStatus.GOING
             ),
-            RSVP(
+            RSVP.create(
                 eventId = "event2",
                 userId = "user3",
                 status = RSVPStatus.MAYBE
             ),
-            RSVP(
+            RSVP.create(
                 eventId = "event3",
                 userId = "user1",
                 status = RSVPStatus.GOING
             )
         )
+        
         rsvps.forEach { rsvp ->
-            rsvpDao.insertRSVP(rsvp)
+            val result = rsvpRemoteDataSource.insertRSVP(rsvp)
+            if (result.isSuccess) {
+                Log.d(TAG, "RSVP inserted successfully: ${result.getOrNull()}")
+            } else {
+                Log.e(TAG, "Failed to insert RSVP: ${result.exceptionOrNull()?.message}")
+            }
         }
         
-        // Note: Sample attendance data removed to allow proper testing of QR scanning
-        // Users should be able to scan QR codes and register attendance during actual events
+        Log.d(TAG, "Initial data insertion completed")
     }
 }
+

@@ -73,18 +73,20 @@ class AuthRemoteDataSource @Inject constructor(
                     Log.e(TAG, "Exception creating task: ${e.message}", e)
                     throw e
                 }
-                Log.d(TAG, "Task created successfully, isComplete: ${task.isComplete}")
                 
-                if (task.isComplete) {
+                val currentTask = task ?: throw Exception("Failed to create sign-in task")
+                Log.d(TAG, "Task created successfully, isComplete: ${currentTask.isComplete}")
+                
+                if (currentTask.isComplete) {
                     Log.d(TAG, "Task already complete, checking result")
-                    val result = task.result
+                    val result = currentTask.result
                     Log.d(TAG, "Task result obtained, user: ${result?.user?.uid}")
                 }
                 
                 Log.d(TAG, "Task not complete, waiting for result with timeout...")
                 val result = withTimeout(30000L) {
                     Log.d(TAG, "Inside withTimeout, calling task.await()")
-                    val awaitResult = task.await()
+                    val awaitResult = currentTask.await()
                     Log.d(TAG, "task.await() completed")
                     awaitResult
                 }

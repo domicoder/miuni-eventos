@@ -134,7 +134,7 @@ fun LoginScreen(
             return
         }
         android.util.Log.d("LoginScreen", "Activity found, starting Google Sign-In")
-        viewModel.startGoogleSignIn(activity!!)
+        viewModel.startGoogleSignIn(activity)
     }
     
     val colorScheme = MaterialTheme.colorScheme

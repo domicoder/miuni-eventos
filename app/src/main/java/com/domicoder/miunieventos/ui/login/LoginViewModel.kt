@@ -5,7 +5,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.domicoder.miunieventos.data.repository.AuthResult
-import com.domicoder.miunieventos.domain.model.User
+import com.domicoder.miunieventos.data.model.User
 import com.domicoder.miunieventos.domain.usecase.auth.SignInWithEmailUseCase
 import com.domicoder.miunieventos.domain.usecase.auth.SignInWithGoogleUseCase
 import com.domicoder.miunieventos.util.GoogleSignInHelper
@@ -54,7 +54,7 @@ class LoginViewModel @Inject constructor(
                     onSuccess = { user ->
                         _isLoading.value = false
                         _authResult.value = AuthResult.Success(
-                            com.domicoder.miunieventos.data.model.User(
+                            User(
                                 id = user.id,
                                 name = user.name,
                                 email = user.email,

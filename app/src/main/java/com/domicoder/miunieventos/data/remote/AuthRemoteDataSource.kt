@@ -79,18 +79,6 @@ class AuthRemoteDataSource @Inject constructor(
                     Log.d(TAG, "Task already complete, checking result")
                     val result = task.result
                     Log.d(TAG, "Task result obtained, user: ${result?.user?.uid}")
-                    result?.user?.let {
-                        Log.d(TAG, "User obtained successfully: ${it.email}, uid: ${it.uid}")
-                        return@withContext Result.success(it)
-                    } ?: run {
-                        Log.e(TAG, "User is null in completed task")
-                        val exception = task.exception
-                        if (exception != null) {
-                            Log.e(TAG, "Task exception: ${exception.message}", exception)
-                            return@withContext Result.failure(exception)
-                        }
-                        return@withContext Result.failure(Exception("No se pudo obtener el usuario después del inicio de sesión"))
-                    }
                 }
                 
                 Log.d(TAG, "Task not complete, waiting for result with timeout...")

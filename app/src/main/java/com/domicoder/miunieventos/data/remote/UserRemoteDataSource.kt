@@ -72,7 +72,14 @@ class UserRemoteDataSource @Inject constructor(
     suspend fun getUserById(id: String): User? {
         return try {
             val document = usersCollection.document(id).get().await()
-            document.toObject(User::class.java)
+            if (document.exists()) {
+                val user = document.toObject(User::class.java)
+                Log.d(TAG, "User fetched from Firestore: id=${user?.id}, name=${user?.name}, isOrganizer=${user?.isOrganizer}")
+                user
+            } else {
+                Log.d(TAG, "User document does not exist for ID: $id")
+                null
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error getting user by ID: $id", e)
             null

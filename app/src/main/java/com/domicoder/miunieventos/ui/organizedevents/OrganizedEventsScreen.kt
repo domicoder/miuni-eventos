@@ -1,5 +1,6 @@
 package com.domicoder.miunieventos.ui.organizedevents
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -91,7 +92,7 @@ fun OrganizedEventsScreen(
             viewModel.refreshEvents()
         }
     }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -116,9 +117,9 @@ fun OrganizedEventsScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { 
+                onClick = {
                     // TODO: Navigate to create event screen
-                    // navController.navigate(NavRoutes.CreateEvent.route)
+//                     navController.navigate(NavRoutes.CreateEvent.route)
                 }
             ) {
                 Icon(
@@ -126,97 +127,99 @@ fun OrganizedEventsScreen(
                     contentDescription = "Crear Evento"
                 )
             }
-        }
-    ) {
-        when {
-            isLoading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-            error != null -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+        },
+        content = { paddingValues ->
+            when {
+                isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "Error",
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = error ?: "Error desconocido",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = { viewModel.refreshEvents() }) {
-                            Text("Reintentar")
+                        CircularProgressIndicator()
+                    }
+                }
+                error != null -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Error",
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = error ?: "Error desconocido",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(onClick = { viewModel.refreshEvents() }) {
+                                Text("Reintentar")
+                            }
+                        }
+                    }
+                }
+                organizedEvents.isEmpty() -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(paddingValues)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Event,
+                                contentDescription = null,
+                                modifier = Modifier.size(80.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "No tienes eventos organizados",
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Crea tu primer evento tocando el botón +",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+                else -> {
+                    LazyColumn(
+                        contentPadding = PaddingValues(top = 120.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(organizedEvents) { event ->
+                            OrganizedEventCard(
+                                event = event,
+                                onEditClick = {
+                                    // Navigate to edit screen and refresh events when returning
+                                    navController.navigate(NavRoutes.EditEvent.createRoute(event.id)) {
+                                        // This will ensure we refresh events when returning
+                                        launchSingleTop = true
+                                    }
+                                },
+                                onClick = {
+                                    navController.navigate(NavRoutes.EventDetail.createRoute(event.id))
+                                },
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            )
                         }
                     }
                 }
             }
-            organizedEvents.isEmpty() -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Event,
-                            contentDescription = null,
-                            modifier = Modifier.size(80.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "No tienes eventos organizados",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Crea tu primer evento tocando el botón +",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-            else -> {
-                LazyColumn(
-                    contentPadding = PaddingValues(top = 120.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(organizedEvents) { event ->
-                        OrganizedEventCard(
-                            event = event,
-                            onEditClick = {
-                                // Navigate to edit screen and refresh events when returning
-                                navController.navigate(NavRoutes.EditEvent.createRoute(event.id)) {
-                                    // This will ensure we refresh events when returning
-                                    launchSingleTop = true
-                                }
-                            },
-                            onClick = {
-                                navController.navigate(NavRoutes.EventDetail.createRoute(event.id))
-                            },
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
-                    }
-                }
-            }
         }
-    }
+    )
 }
 
 @Composable

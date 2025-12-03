@@ -58,9 +58,11 @@ class UserStateManager @Inject constructor(
                 }
                 
                 if (user != null) {
+                    Log.d(TAG, "Setting user state - id: ${user.id}, name: ${user.name}, isOrganizer: ${user.isOrganizer}")
                     _currentUser.value = user
                     _isAuthenticated.value = true
                     _isOrganizer.value = user.isOrganizer
+                    Log.d(TAG, "isOrganizer state set to: ${_isOrganizer.value}")
                     
                     authPersistenceManager.saveAuthData(
                         userId = user.id,
@@ -71,7 +73,7 @@ class UserStateManager @Inject constructor(
                         rememberMe = rememberMe
                     )
                     
-                    Log.d(TAG, "User set successfully: ${user.name} (${user.id}), rememberMe: $rememberMe")
+                    Log.d(TAG, "User set successfully: ${user.name} (${user.id}), isOrganizer: ${user.isOrganizer}, rememberMe: $rememberMe")
                 } else {
                     Log.w(TAG, "User not found for ID: $userId after sync attempt")
                     _currentUser.value = null
@@ -169,11 +171,13 @@ class UserStateManager @Inject constructor(
                     val user = userRepository.getUserById(storedUserId)
                     if (user != null) {
                         // Restore the authentication state
+                        Log.d(TAG, "Restoring auth - user found: ${user.name}, isOrganizer: ${user.isOrganizer}")
                         _currentUser.value = user
                         _isAuthenticated.value = true
                         _isOrganizer.value = user.isOrganizer
+                        Log.d(TAG, "isOrganizer state restored to: ${_isOrganizer.value}")
                         
-                        Log.d(TAG, "Authentication state restored successfully for user: ${user.name}")
+                        Log.d(TAG, "Authentication state restored successfully for user: ${user.name}, isOrganizer: ${user.isOrganizer}")
                         return true
                     } else {
                         // User no longer exists, clear stored data

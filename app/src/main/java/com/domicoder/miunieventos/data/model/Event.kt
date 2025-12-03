@@ -6,6 +6,11 @@ import com.google.firebase.firestore.Exclude
 import java.time.LocalDateTime
 import java.time.ZoneId
 
+enum class EventStatus {
+    DRAFT,
+    PUBLISHED
+}
+
 data class Event(
     @DocumentId
     val id: String = "",
@@ -21,6 +26,7 @@ data class Event(
     val category: String = "",
     val department: String = "",
     val organizerId: String = "",
+    val status: String = EventStatus.DRAFT.name,
     var createdAt: Timestamp? = null,
     var updatedAt: Timestamp? = null
 ) {
@@ -48,6 +54,18 @@ data class Event(
             ?.atZone(ZoneId.systemDefault())?.toLocalDateTime()
             ?: LocalDateTime.now()
 
+    @get:Exclude
+    val eventStatus: EventStatus
+        get() = try {
+            EventStatus.valueOf(status)
+        } catch (e: Exception) {
+            EventStatus.DRAFT
+        }
+
+    @get:Exclude
+    val isPublished: Boolean
+        get() = eventStatus == EventStatus.PUBLISHED
+
     companion object {
         fun fromLocalDateTime(dateTime: LocalDateTime): Timestamp {
             return Timestamp(
@@ -71,6 +89,7 @@ data class Event(
             category: String,
             department: String,
             organizerId: String,
+            status: EventStatus = EventStatus.DRAFT,
             createdAt: LocalDateTime = LocalDateTime.now(),
             updatedAt: LocalDateTime = LocalDateTime.now()
         ): Event {
@@ -88,6 +107,7 @@ data class Event(
                 category = category,
                 department = department,
                 organizerId = organizerId,
+                status = status.name,
                 createdAt = fromLocalDateTime(createdAt),
                 updatedAt = fromLocalDateTime(updatedAt)
             )
@@ -108,6 +128,7 @@ data class Event(
         category: String = this.category,
         department: String = this.department,
         organizerId: String = this.organizerId,
+        status: EventStatus = this.eventStatus,
         createdAt: LocalDateTime = this.createdAtLocal,
         updatedAt: LocalDateTime = this.updatedAtLocal
     ): Event {
@@ -125,6 +146,7 @@ data class Event(
             category = category,
             department = department,
             organizerId = organizerId,
+            status = status.name,
             createdAt = fromLocalDateTime(createdAt),
             updatedAt = fromLocalDateTime(updatedAt)
         )

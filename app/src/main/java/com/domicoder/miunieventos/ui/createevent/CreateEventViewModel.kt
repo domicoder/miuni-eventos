@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.domicoder.miunieventos.data.model.Category
 import com.domicoder.miunieventos.data.model.Department
 import com.domicoder.miunieventos.data.model.Event
+import com.domicoder.miunieventos.data.model.EventStatus
 import com.domicoder.miunieventos.data.remote.ImageStorageDataSource
 import com.domicoder.miunieventos.data.repository.ConfigRepository
 import com.domicoder.miunieventos.data.repository.EventRepository
@@ -62,7 +63,8 @@ class CreateEventViewModel @Inject constructor(
         department: String,
         organizerId: String,
         startDateTime: LocalDateTime,
-        endDateTime: LocalDateTime
+        endDateTime: LocalDateTime,
+        status: EventStatus = EventStatus.DRAFT
     ) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -99,6 +101,7 @@ class CreateEventViewModel @Inject constructor(
                     category = category,
                     department = department,
                     organizerId = organizerId,
+                    status = status,
                     createdAt = LocalDateTime.now(),
                     updatedAt = LocalDateTime.now()
                 )

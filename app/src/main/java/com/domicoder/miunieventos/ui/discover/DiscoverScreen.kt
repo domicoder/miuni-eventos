@@ -141,7 +141,10 @@ fun DiscoverScreen(
             effectiveUserRsvpStates[event.id] == RSVPStatus.GOING
         } else true
         
-        matchesQuery && matchesCategory && matchesDepartment && matchesStartDate && matchesEndDate && matchesSelectedFilter
+        // Only show published events in Discover view
+        val isPublishedEvent = event.isPublished
+        
+        matchesQuery && matchesCategory && matchesDepartment && matchesStartDate && matchesEndDate && matchesSelectedFilter && isPublishedEvent
     }
     
     var searchActive by remember { mutableStateOf(false) }

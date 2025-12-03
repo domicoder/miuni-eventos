@@ -3,13 +3,18 @@ package com.domicoder.miunieventos.ui.createevent
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.domicoder.miunieventos.data.model.Category
+import com.domicoder.miunieventos.data.model.Department
 import com.domicoder.miunieventos.data.model.Event
 import com.domicoder.miunieventos.data.remote.ImageStorageDataSource
+import com.domicoder.miunieventos.data.repository.ConfigRepository
 import com.domicoder.miunieventos.data.repository.EventRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.util.UUID
@@ -18,8 +23,15 @@ import javax.inject.Inject
 @HiltViewModel
 class CreateEventViewModel @Inject constructor(
     private val eventRepository: EventRepository,
-    private val imageStorageDataSource: ImageStorageDataSource
+    private val imageStorageDataSource: ImageStorageDataSource,
+    private val configRepository: ConfigRepository
 ) : ViewModel() {
+    
+    val categories: StateFlow<List<Category>> = configRepository.getCategories()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    
+    val departments: StateFlow<List<Department>> = configRepository.getDepartments()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()

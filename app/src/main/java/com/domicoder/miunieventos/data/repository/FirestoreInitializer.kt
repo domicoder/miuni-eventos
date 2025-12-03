@@ -1,11 +1,14 @@
 package com.domicoder.miunieventos.data.repository
 
 import android.util.Log
+import com.domicoder.miunieventos.data.model.Category
+import com.domicoder.miunieventos.data.model.Department
 import com.domicoder.miunieventos.data.model.Event
 import com.domicoder.miunieventos.data.model.RSVP
 import com.domicoder.miunieventos.data.model.RSVPStatus
 import com.domicoder.miunieventos.data.model.User
 import com.domicoder.miunieventos.data.remote.AttendanceRemoteDataSource
+import com.domicoder.miunieventos.data.remote.ConfigRemoteDataSource
 import com.domicoder.miunieventos.data.remote.EventRemoteDataSource
 import com.domicoder.miunieventos.data.remote.RSVPRemoteDataSource
 import com.domicoder.miunieventos.data.remote.UserRemoteDataSource
@@ -19,7 +22,8 @@ class FirestoreInitializer @Inject constructor(
     private val eventRemoteDataSource: EventRemoteDataSource,
     private val userRemoteDataSource: UserRemoteDataSource,
     private val rsvpRemoteDataSource: RSVPRemoteDataSource,
-    private val attendanceRemoteDataSource: AttendanceRemoteDataSource
+    private val attendanceRemoteDataSource: AttendanceRemoteDataSource,
+    private val configRemoteDataSource: ConfigRemoteDataSource
 ) {
     companion object {
         private const val TAG = "FirestoreInitializer"
@@ -27,6 +31,8 @@ class FirestoreInitializer @Inject constructor(
     
     suspend fun initializeDatabase() {
         try {
+            initializeConfig()
+            
             if (isDatabaseEmpty()) {
                 Log.d(TAG, "Database is empty, inserting initial data...")
                 insertInitialData()
@@ -34,11 +40,43 @@ class FirestoreInitializer @Inject constructor(
                 Log.d(TAG, "Database already has data, skipping initialization")
             }
             
-            // Clear any existing attendance data to fix QR scanning issues
             clearAttendanceData()
         } catch (e: Exception) {
             Log.e(TAG, "Error during database initialization", e)
         }
+    }
+    
+    private suspend fun initializeConfig() {
+        val categories = listOf(
+            Category(name = "Académico", order = 1),
+            Category(name = "Cultural", order = 2),
+            Category(name = "Deportivo", order = 3),
+            Category(name = "Conferencia", order = 4),
+            Category(name = "Social", order = 5),
+            Category(name = "Taller", order = 6),
+            Category(name = "Charla", order = 7),
+            Category(name = "Networking", order = 8),
+            Category(name = "Otro", order = 99)
+        )
+        
+        val departments = listOf(
+            Department(name = "Ingeniería Software", order = 1),
+            Department(name = "Tecnología", order = 2),
+            Department(name = "Educación", order = 3),
+            Department(name = "Medicina", order = 4),
+            Department(name = "Artes", order = 5),
+            Department(name = "Deportes", order = 6),
+            Department(name = "Asociación Estudiantil", order = 7),
+            Department(name = "Administración", order = 8),
+            Department(name = "Derecho", order = 9),
+            Department(name = "Comunicación", order = 10),
+            Department(name = "Negocios", order = 11),
+            Department(name = "Otro", order = 99)
+        )
+        
+        configRemoteDataSource.initializeCategories(categories)
+        configRemoteDataSource.initializeDepartments(departments)
+        Log.d(TAG, "Config initialization completed")
     }
     
     private suspend fun isDatabaseEmpty(): Boolean {
@@ -47,7 +85,7 @@ class FirestoreInitializer @Inject constructor(
             users.isEmpty()
         } catch (e: Exception) {
             Log.e(TAG, "Error checking if database is empty", e)
-            true // Assume empty if we can't check
+            true
         }
     }
     
@@ -61,7 +99,6 @@ class FirestoreInitializer @Inject constructor(
     }
     
     private suspend fun insertInitialData() {
-        // Insert initial users
         val users = listOf(
             User(
                 id = "user1",
@@ -96,7 +133,6 @@ class FirestoreInitializer @Inject constructor(
             Log.e(TAG, "Failed to insert initial users: ${usersResult.exceptionOrNull()?.message}")
         }
         
-        // Insert initial events
         val now = LocalDateTime.now()
         val events = listOf(
             Event.create(
@@ -110,7 +146,7 @@ class FirestoreInitializer @Inject constructor(
                 startDateTime = now.plusDays(2),
                 endDateTime = now.plusDays(2).plusHours(2),
                 category = "Académico",
-                department = "Ingeniería Informática",
+                department = "Tecnología",
                 organizerId = "user1",
                 createdAt = now,
                 updatedAt = now
@@ -188,35 +224,16 @@ class FirestoreInitializer @Inject constructor(
             Log.e(TAG, "Failed to insert initial events: ${eventsResult.exceptionOrNull()?.message}")
         }
         
-        // Insert initial RSVPs
         val rsvps = listOf(
-            RSVP.create(
-                eventId = "event1",
-                userId = "user3",
-                status = RSVPStatus.GOING
-            ),
-            RSVP.create(
-                eventId = "event2",
-                userId = "user3",
-                status = RSVPStatus.MAYBE
-            ),
-            RSVP.create(
-                eventId = "event3",
-                userId = "user1",
-                status = RSVPStatus.GOING
-            )
+            RSVP.create(eventId = "event1", userId = "user3", status = RSVPStatus.GOING),
+            RSVP.create(eventId = "event2", userId = "user3", status = RSVPStatus.MAYBE),
+            RSVP.create(eventId = "event3", userId = "user1", status = RSVPStatus.GOING)
         )
         
         rsvps.forEach { rsvp ->
-            val result = rsvpRemoteDataSource.insertRSVP(rsvp)
-            if (result.isSuccess) {
-                Log.d(TAG, "RSVP inserted successfully: ${result.getOrNull()}")
-            } else {
-                Log.e(TAG, "Failed to insert RSVP: ${result.exceptionOrNull()?.message}")
-            }
+            rsvpRemoteDataSource.insertRSVP(rsvp)
         }
         
         Log.d(TAG, "Initial data insertion completed")
     }
 }
-

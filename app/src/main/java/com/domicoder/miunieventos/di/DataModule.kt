@@ -3,12 +3,14 @@ package com.domicoder.miunieventos.di
 import android.content.Context
 import com.domicoder.miunieventos.data.remote.AttendanceRemoteDataSource
 import com.domicoder.miunieventos.data.remote.AuthRemoteDataSource
+import com.domicoder.miunieventos.data.remote.ConfigRemoteDataSource
 import com.domicoder.miunieventos.data.remote.EventRemoteDataSource
 import com.domicoder.miunieventos.data.remote.RSVPRemoteDataSource
 import com.domicoder.miunieventos.data.remote.UserRemoteDataSource
 import com.domicoder.miunieventos.data.repository.AttendanceRepository
 import com.domicoder.miunieventos.data.repository.AuthRepository as OldAuthRepository
 import com.domicoder.miunieventos.data.repository.AuthRepositoryImpl
+import com.domicoder.miunieventos.data.repository.ConfigRepository
 import com.domicoder.miunieventos.data.repository.EventRepository
 import com.domicoder.miunieventos.data.repository.RSVPRepository
 import com.domicoder.miunieventos.data.repository.UserRepository
@@ -101,6 +103,14 @@ object DataModule {
         return ImageStorageDataSource(storage)
     }
     
+    @Provides
+    @Singleton
+    fun provideConfigRemoteDataSource(
+        firestore: FirebaseFirestore
+    ): ConfigRemoteDataSource {
+        return ConfigRemoteDataSource(firestore)
+    }
+    
     // Repositories
     @Provides
     @Singleton
@@ -134,6 +144,14 @@ object DataModule {
         return AttendanceRepository(remoteDataSource)
     }
     
+    @Provides
+    @Singleton
+    fun provideConfigRepository(
+        remoteDataSource: ConfigRemoteDataSource
+    ): ConfigRepository {
+        return ConfigRepository(remoteDataSource)
+    }
+    
     // Domain Repository Implementation (new architecture)
     @Provides
     @Singleton
@@ -150,20 +168,21 @@ object DataModule {
         return OldAuthRepository(userRemoteDataSource)
     }
     
-    // Firestore Initializer (replaces DatabaseInitializer)
     @Provides
     @Singleton
     fun provideFirestoreInitializer(
         eventRemoteDataSource: EventRemoteDataSource,
         userRemoteDataSource: UserRemoteDataSource,
         rsvpRemoteDataSource: RSVPRemoteDataSource,
-        attendanceRemoteDataSource: AttendanceRemoteDataSource
+        attendanceRemoteDataSource: AttendanceRemoteDataSource,
+        configRemoteDataSource: ConfigRemoteDataSource
     ): FirestoreInitializer {
         return FirestoreInitializer(
             eventRemoteDataSource,
             userRemoteDataSource,
             rsvpRemoteDataSource,
-            attendanceRemoteDataSource
+            attendanceRemoteDataSource,
+            configRemoteDataSource
         )
     }
     

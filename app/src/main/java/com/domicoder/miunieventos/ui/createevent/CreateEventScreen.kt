@@ -91,6 +91,8 @@ fun CreateEventScreen(
     val error by viewModel.error.collectAsState()
     val createSuccess by viewModel.createSuccess.collectAsState()
     val selectedImageUri by viewModel.selectedImageUri.collectAsState()
+    val categories by viewModel.categories.collectAsState()
+    val departments by viewModel.departments.collectAsState()
     
     val context = LocalContext.current
     
@@ -112,17 +114,6 @@ fun CreateEventScreen(
     ) { uri: Uri? ->
         viewModel.setSelectedImage(uri)
     }
-    
-    val categories = listOf(
-        "Académico", "Cultural", "Deportivo", "Conferencia",
-        "Social", "Taller", "Charla", "Networking", "Otro"
-    )
-    
-    val departments = listOf(
-        "Ingeniería Software", "Ingeniería Informática", "Ciencias Sociales",
-        "Medicina", "Artes", "Deportes", "Asociación Estudiantil",
-        "Administración", "Derecho", "Comunicación", "Otro"
-    )
     
     val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -329,9 +320,7 @@ fun CreateEventScreen(
                         )
                     }
                 } else {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
                             imageVector = Icons.Default.AddPhotoAlternate,
                             contentDescription = null,
@@ -470,11 +459,11 @@ fun CreateEventScreen(
                     expanded = categoryExpanded,
                     onDismissRequest = { categoryExpanded = false }
                 ) {
-                    categories.forEach { option ->
+                    categories.forEach { cat ->
                         DropdownMenuItem(
-                            text = { Text(option) },
+                            text = { Text(cat.name) },
                             onClick = {
-                                category = option
+                                category = cat.name
                                 categoryExpanded = false
                             }
                         )
@@ -518,11 +507,11 @@ fun CreateEventScreen(
                     expanded = departmentExpanded,
                     onDismissRequest = { departmentExpanded = false }
                 ) {
-                    departments.forEach { option ->
+                    departments.forEach { dept ->
                         DropdownMenuItem(
-                            text = { Text(option) },
+                            text = { Text(dept.name) },
                             onClick = {
-                                department = option
+                                department = dept.name
                                 departmentExpanded = false
                             }
                         )

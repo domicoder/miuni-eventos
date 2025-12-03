@@ -14,7 +14,7 @@ import java.time.LocalDateTime
 import javax.inject.Inject
 
 @HiltViewModel
-class EditEventViewModel @Inject constructor(
+open class EditEventViewModel @Inject constructor(
     private val eventRepository: EventRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {

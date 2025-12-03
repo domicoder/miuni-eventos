@@ -41,10 +41,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.domicoder.miunieventos.data.model.Event
+import kotlinx.coroutines.flow.MutableStateFlow
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -312,5 +317,16 @@ fun EditEventScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true, name = "Edit Event Screen")
+@Composable
+fun EditEventScreenPreview() {
+    MaterialTheme {
+        val navController = rememberNavController()
+        EditEventScreen(
+            navController = navController,
+        )
     }
 }

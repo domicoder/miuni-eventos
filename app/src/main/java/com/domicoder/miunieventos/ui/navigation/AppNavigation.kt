@@ -39,6 +39,7 @@ import kotlinx.coroutines.withContext
 import androidx.compose.runtime.rememberCoroutineScope
 import com.domicoder.miunieventos.ui.organizedevents.OrganizedEventsScreen
 import com.domicoder.miunieventos.ui.eventedit.EditEventScreen
+import com.domicoder.miunieventos.ui.createevent.CreateEventScreen
 
 @Composable
 fun AppNavigation(
@@ -209,6 +210,21 @@ fun AppNavigation(
                 val eventId = backStackEntry.arguments?.getString("eventId") ?: ""
                 EditEventScreen(
                     navController = navController
+                )
+            }
+            
+            composable(
+                route = NavRoutes.CreateEvent.route,
+                arguments = listOf(
+                    navArgument("organizerId") {
+                        type = NavType.StringType
+                    }
+                )
+            ) { backStackEntry ->
+                val organizerId = backStackEntry.arguments?.getString("organizerId") ?: ""
+                CreateEventScreen(
+                    navController = navController,
+                    organizerId = organizerId
                 )
             }
             

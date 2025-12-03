@@ -118,13 +118,16 @@ fun OrganizedEventsScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    // TODO: Navigate to create event screen
-//                     navController.navigate(NavRoutes.CreateEvent.route)
-                }
+                    if (organizerId.isNotEmpty()) {
+                        navController.navigate(NavRoutes.CreateEvent.createRoute(organizerId))
+                    }
+                },
+                containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "Crear Evento"
+                    contentDescription = "Crear Evento",
+                    tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
         },

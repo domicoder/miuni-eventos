@@ -1,9 +1,9 @@
 package com.domicoder.miunieventos.data.remote
 
+import android.util.Log
 import com.domicoder.miunieventos.data.model.Category
 import com.domicoder.miunieventos.data.model.Department
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -16,18 +16,27 @@ class ConfigRemoteDataSource @Inject constructor(
     private val firestore: FirebaseFirestore
 ) {
     companion object {
+        private const val TAG = "ConfigRemoteDataSource"
         private const val CATEGORIES_COLLECTION = "categories"
         private const val DEPARTMENTS_COLLECTION = "departments"
     }
 
     fun getCategories(): Flow<List<Category>> = callbackFlow {
         val listener = firestore.collection(CATEGORIES_COLLECTION)
-            .whereEqualTo("active", true)
-            .orderBy("order", Query.Direction.ASCENDING)
-            .addSnapshotListener { snapshot, _ ->
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e(TAG, "Error getting categories", error)
+                    trySend(emptyList())
+                    return@addSnapshotListener
+                }
+                
                 val categories = snapshot?.documents?.mapNotNull { doc ->
                     doc.toObject(Category::class.java)
-                } ?: emptyList()
+                }?.filter { it.active }
+                    ?.sortedBy { it.order }
+                    ?: emptyList()
+                
+                Log.d(TAG, "Categories loaded: ${categories.size}")
                 trySend(categories)
             }
         awaitClose { listener.remove() }
@@ -35,12 +44,20 @@ class ConfigRemoteDataSource @Inject constructor(
 
     fun getDepartments(): Flow<List<Department>> = callbackFlow {
         val listener = firestore.collection(DEPARTMENTS_COLLECTION)
-            .whereEqualTo("active", true)
-            .orderBy("order", Query.Direction.ASCENDING)
-            .addSnapshotListener { snapshot, _ ->
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e(TAG, "Error getting departments", error)
+                    trySend(emptyList())
+                    return@addSnapshotListener
+                }
+                
                 val departments = snapshot?.documents?.mapNotNull { doc ->
                     doc.toObject(Department::class.java)
-                } ?: emptyList()
+                }?.filter { it.active }
+                    ?.sortedBy { it.order }
+                    ?: emptyList()
+                
+                Log.d(TAG, "Departments loaded: ${departments.size}")
                 trySend(departments)
             }
         awaitClose { listener.remove() }
@@ -56,9 +73,11 @@ class ConfigRemoteDataSource @Inject constructor(
                     batch.set(docRef, category.copy(id = docRef.id))
                 }
                 batch.commit().await()
+                Log.d(TAG, "Categories initialized: ${categories.size}")
             }
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e(TAG, "Error initializing categories", e)
             Result.failure(e)
         }
     }
@@ -73,11 +92,12 @@ class ConfigRemoteDataSource @Inject constructor(
                     batch.set(docRef, department.copy(id = docRef.id))
                 }
                 batch.commit().await()
+                Log.d(TAG, "Departments initialized: ${departments.size}")
             }
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e(TAG, "Error initializing departments", e)
             Result.failure(e)
         }
     }
 }
-

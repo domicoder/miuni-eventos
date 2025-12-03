@@ -51,6 +51,7 @@ firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
+firebase-storage = { group = "com.google.firebase", name = "firebase-storage" }
 
 
 # Maps

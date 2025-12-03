@@ -151,6 +151,20 @@ app/src/main/java/com/domicoder/miunieventos/
       ./gradlew clean build
     ```
 
+6. **Deploy firebase rules**
+
+    ```bash
+      firebase deploy --only firestore
+      firebase deploy --only storage
+    ```
+
+7. **Deploy firebase hosting**
+
+    ```bash
+      firebase use miuni-eventos
+      firebase deploy
+    ```
+
 ### Environment Configuration
 
 The project uses the following key configurations:

@@ -99,6 +99,7 @@ dependencies {
     implementation(libs.firebase.messaging)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.storage)
     
     // Google Sign-In
     implementation(libs.google.auth)

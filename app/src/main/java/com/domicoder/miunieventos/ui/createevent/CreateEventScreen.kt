@@ -2,13 +2,19 @@ package com.domicoder.miunieventos.ui.createevent
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,9 +27,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.School
@@ -44,7 +52,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -57,11 +64,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -76,12 +87,13 @@ fun CreateEventScreen(
     viewModel: CreateEventViewModel = hiltViewModel()
 ) {
     val isLoading by viewModel.isLoading.collectAsState()
+    val isUploadingImage by viewModel.isUploadingImage.collectAsState()
     val error by viewModel.error.collectAsState()
     val createSuccess by viewModel.createSuccess.collectAsState()
+    val selectedImageUri by viewModel.selectedImageUri.collectAsState()
     
     val context = LocalContext.current
     
-    // Form state
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
@@ -92,11 +104,15 @@ fun CreateEventScreen(
     var endDate by remember { mutableStateOf<LocalDate?>(null) }
     var endTime by remember { mutableStateOf<LocalTime?>(null) }
     
-    // Dropdown states
     var categoryExpanded by remember { mutableStateOf(false) }
     var departmentExpanded by remember { mutableStateOf(false) }
     
-    // Categories and departments
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        viewModel.setSelectedImage(uri)
+    }
+    
     val categories = listOf(
         "Académico", "Cultural", "Deportivo", "Conferencia",
         "Social", "Taller", "Charla", "Networking", "Otro"
@@ -108,11 +124,9 @@ fun CreateEventScreen(
         "Administración", "Derecho", "Comunicación", "Otro"
     )
     
-    // Date formatters
     val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
     
-    // Handle create success
     LaunchedEffect(createSuccess) {
         if (createSuccess) {
             viewModel.resetCreateSuccess()
@@ -120,7 +134,6 @@ fun CreateEventScreen(
         }
     }
     
-    // Date picker dialogs
     fun showStartDatePicker() {
         val calendar = Calendar.getInstance()
         startDate?.let {
@@ -131,7 +144,6 @@ fun CreateEventScreen(
             context,
             { _, year, month, dayOfMonth ->
                 startDate = LocalDate.of(year, month + 1, dayOfMonth)
-                // Auto-set end date if not set
                 if (endDate == null) {
                     endDate = LocalDate.of(year, month + 1, dayOfMonth)
                 }
@@ -203,7 +215,6 @@ fun CreateEventScreen(
         ).show()
     }
     
-    // Form validation
     val isFormValid = title.isNotBlank() &&
             description.isNotBlank() &&
             location.isNotBlank() &&
@@ -219,9 +230,7 @@ fun CreateEventScreen(
             val startDateTime = LocalDateTime.of(startDate, startTime)
             val endDateTime = LocalDateTime.of(endDate, endTime)
             
-            // Validate end time is after start time
             if (endDateTime.isBefore(startDateTime) || endDateTime.isEqual(startDateTime)) {
-                viewModel.clearError()
                 return
             }
             
@@ -268,7 +277,95 @@ fun CreateEventScreen(
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            // Title Field
+            Text(
+                text = "Imagen del Evento",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(16f / 9f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .border(
+                        width = 2.dp,
+                        color = if (selectedImageUri != null) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.outline,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable { imagePickerLauncher.launch("image/*") },
+                contentAlignment = Alignment.Center
+            ) {
+                if (selectedImageUri != null) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(context)
+                            .data(selectedImageUri)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "Imagen seleccionada",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                    
+                    IconButton(
+                        onClick = { viewModel.setSelectedImage(null) },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(8.dp)
+                            .background(
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                                RoundedCornerShape(50)
+                            )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Eliminar imagen",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                } else {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AddPhotoAlternate,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Toca para agregar imagen",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "(Opcional)",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+                
+                if (isUploadingImage) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
@@ -292,7 +389,6 @@ fun CreateEventScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Description Field
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
@@ -317,7 +413,6 @@ fun CreateEventScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Location Field
             OutlinedTextField(
                 value = location,
                 onValueChange = { location = it },
@@ -341,7 +436,6 @@ fun CreateEventScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Category Dropdown
             ExposedDropdownMenuBox(
                 expanded = categoryExpanded,
                 onExpandedChange = { categoryExpanded = !categoryExpanded }
@@ -390,7 +484,6 @@ fun CreateEventScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Department Dropdown
             ExposedDropdownMenuBox(
                 expanded = departmentExpanded,
                 onExpandedChange = { departmentExpanded = !departmentExpanded }
@@ -439,7 +532,6 @@ fun CreateEventScreen(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Date & Time Section Header
             Text(
                 text = "Fecha y Hora",
                 style = MaterialTheme.typography.titleMedium,
@@ -449,7 +541,6 @@ fun CreateEventScreen(
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // Start Date and Time Row
             Text(
                 text = "Inicio",
                 style = MaterialTheme.typography.bodyMedium,
@@ -462,7 +553,6 @@ fun CreateEventScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Start Date Button
                 OutlinedButton(
                     onClick = { showStartDatePicker() },
                     modifier = Modifier.weight(1f),
@@ -486,7 +576,6 @@ fun CreateEventScreen(
                     )
                 }
                 
-                // Start Time Button
                 OutlinedButton(
                     onClick = { showStartTimePicker() },
                     modifier = Modifier.weight(1f),
@@ -513,7 +602,6 @@ fun CreateEventScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // End Date and Time Row
             Text(
                 text = "Fin",
                 style = MaterialTheme.typography.bodyMedium,
@@ -526,7 +614,6 @@ fun CreateEventScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // End Date Button
                 OutlinedButton(
                     onClick = { showEndDatePicker() },
                     modifier = Modifier.weight(1f),
@@ -550,7 +637,6 @@ fun CreateEventScreen(
                     )
                 }
                 
-                // End Time Button
                 OutlinedButton(
                     onClick = { showEndTimePicker() },
                     modifier = Modifier.weight(1f),
@@ -577,7 +663,6 @@ fun CreateEventScreen(
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            // Create Button
             Button(
                 onClick = { handleCreate() },
                 modifier = Modifier
@@ -595,6 +680,12 @@ fun CreateEventScreen(
                         color = MaterialTheme.colorScheme.onPrimary,
                         strokeWidth = 2.dp
                     )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = if (isUploadingImage) "Subiendo imagen..." else "Creando evento...",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
                 } else {
                     Icon(
                         imageVector = Icons.Default.Add,
@@ -610,7 +701,6 @@ fun CreateEventScreen(
                 }
             }
             
-            // Error Message
             if (error != null) {
                 Spacer(modifier = Modifier.height(16.dp))
                 
@@ -634,4 +724,3 @@ fun CreateEventScreen(
         }
     }
 }
-

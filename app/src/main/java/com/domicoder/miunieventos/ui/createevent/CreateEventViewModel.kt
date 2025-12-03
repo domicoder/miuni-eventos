@@ -1,9 +1,10 @@
 package com.domicoder.miunieventos.ui.createevent
 
-import android.util.Log
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.domicoder.miunieventos.data.model.Event
+import com.domicoder.miunieventos.data.remote.ImageStorageDataSource
 import com.domicoder.miunieventos.data.repository.EventRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,15 +17,15 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CreateEventViewModel @Inject constructor(
-    private val eventRepository: EventRepository
+    private val eventRepository: EventRepository,
+    private val imageStorageDataSource: ImageStorageDataSource
 ) : ViewModel() {
-    
-    companion object {
-        private const val TAG = "CreateEventViewModel"
-    }
     
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    
+    private val _isUploadingImage = MutableStateFlow(false)
+    val isUploadingImage: StateFlow<Boolean> = _isUploadingImage.asStateFlow()
     
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
@@ -32,8 +33,12 @@ class CreateEventViewModel @Inject constructor(
     private val _createSuccess = MutableStateFlow(false)
     val createSuccess: StateFlow<Boolean> = _createSuccess.asStateFlow()
     
-    private val _createdEventId = MutableStateFlow<String?>(null)
-    val createdEventId: StateFlow<String?> = _createdEventId.asStateFlow()
+    private val _selectedImageUri = MutableStateFlow<Uri?>(null)
+    val selectedImageUri: StateFlow<Uri?> = _selectedImageUri.asStateFlow()
+    
+    fun setSelectedImage(uri: Uri?) {
+        _selectedImageUri.value = uri
+    }
     
     fun createEvent(
         title: String,
@@ -45,16 +50,29 @@ class CreateEventViewModel @Inject constructor(
         department: String,
         organizerId: String,
         startDateTime: LocalDateTime,
-        endDateTime: LocalDateTime,
-        imageUrl: String? = null
+        endDateTime: LocalDateTime
     ) {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
             
             try {
-                // Generate a unique event ID
                 val eventId = UUID.randomUUID().toString()
+                var imageUrl: String? = null
+                
+                _selectedImageUri.value?.let { uri ->
+                    _isUploadingImage.value = true
+                    val uploadResult = imageStorageDataSource.uploadEventImage(uri, eventId)
+                    _isUploadingImage.value = false
+                    
+                    if (uploadResult.isSuccess) {
+                        imageUrl = uploadResult.getOrNull()
+                    } else {
+                        _error.value = "Error al subir la imagen"
+                        _isLoading.value = false
+                        return@launch
+                    }
+                }
                 
                 val event = Event.create(
                     id = eventId,
@@ -76,16 +94,11 @@ class CreateEventViewModel @Inject constructor(
                 val result = eventRepository.insertEvent(event)
                 
                 if (result.isSuccess) {
-                    Log.d(TAG, "Event created successfully: ${result.getOrNull()}")
-                    _createdEventId.value = result.getOrNull()
                     _createSuccess.value = true
                 } else {
-                    val errorMessage = result.exceptionOrNull()?.message ?: "Error desconocido al crear evento"
-                    Log.e(TAG, "Failed to create event: $errorMessage")
-                    _error.value = errorMessage
+                    _error.value = result.exceptionOrNull()?.message ?: "Error al crear evento"
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Exception creating event", e)
                 _error.value = "Error al crear evento: ${e.message}"
             } finally {
                 _isLoading.value = false
@@ -99,7 +112,6 @@ class CreateEventViewModel @Inject constructor(
     
     fun resetCreateSuccess() {
         _createSuccess.value = false
-        _createdEventId.value = null
+        _selectedImageUri.value = null
     }
 }
-

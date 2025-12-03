@@ -19,6 +19,8 @@ import com.domicoder.miunieventos.util.LoginStateManager
 import com.domicoder.miunieventos.util.UserStateManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
+import com.domicoder.miunieventos.data.remote.ImageStorageDataSource
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -41,6 +43,12 @@ object DataModule {
     @Singleton
     fun provideFirebaseFirestore(): FirebaseFirestore {
         return FirebaseFirestore.getInstance()
+    }
+    
+    @Provides
+    @Singleton
+    fun provideFirebaseStorage(): FirebaseStorage {
+        return FirebaseStorage.getInstance()
     }
     
     // Remote Data Sources
@@ -83,6 +91,14 @@ object DataModule {
         firestore: FirebaseFirestore
     ): AttendanceRemoteDataSource {
         return AttendanceRemoteDataSource(firestore)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideImageStorageDataSource(
+        storage: FirebaseStorage
+    ): ImageStorageDataSource {
+        return ImageStorageDataSource(storage)
     }
     
     // Repositories

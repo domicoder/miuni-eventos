@@ -91,8 +91,8 @@ class ScannerViewModel @Inject constructor(
                 
                 // Check if event is currently happening (optional validation)
                 val now = LocalDateTime.now()
-                if (now.isBefore(event.startDateTime) || now.isAfter(event.endDateTime)) {
-                    _scanResult.value = ScanResult.Error("El evento no está en curso. Horario: ${event.startDateTime} - ${event.endDateTime}")
+                if (now.isBefore(event.startDateTimeLocal) || now.isAfter(event.endDateTimeLocal)) {
+                    _scanResult.value = ScanResult.Error("El evento no está en curso. Horario: ${event.startDateTimeLocal} - ${event.endDateTimeLocal}")
                     return@launch
                 }
                 

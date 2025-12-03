@@ -212,7 +212,7 @@ fun EventDetailScreen(
                                     )
                                     
                                     Text(
-                                        text = "${eventData.startDateTime.format(dateFormatter)} - ${eventData.startDateTime.format(timeFormatter)}",
+                                        text = "${eventData.startDateTimeLocal.format(dateFormatter)} - ${eventData.startDateTimeLocal.format(timeFormatter)}",
                                         style = MaterialTheme.typography.bodyMedium
                                     )
                                 }
@@ -771,8 +771,8 @@ private fun addEventToCalendar(
         putExtra("eventLocation", event.location)
         
         // Convert LocalDateTime to milliseconds for calendar
-        val startTime = event.startDateTime.toInstant(ZoneOffset.UTC).toEpochMilli()
-        val endTime = event.endDateTime.toInstant(ZoneOffset.UTC).toEpochMilli()
+        val startTime = event.startDateTimeLocal.toInstant(ZoneOffset.UTC).toEpochMilli()
+        val endTime = event.endDateTimeLocal.toInstant(ZoneOffset.UTC).toEpochMilli()
         
         putExtra("beginTime", startTime)
         putExtra("endTime", endTime)
@@ -805,8 +805,8 @@ private fun shareEvent(
     val shareText = buildString {
         appendLine("🎉 ${event.title}")
         appendLine()
-        appendLine("📅 Fecha: ${event.startDateTime.format(dateFormatter)}")
-        appendLine("⏰ Hora: ${event.startDateTime.format(timeFormatter)} - ${event.endDateTime.format(timeFormatter)}")
+        appendLine("📅 Fecha: ${event.startDateTimeLocal.format(dateFormatter)}")
+        appendLine("⏰ Hora: ${event.startDateTimeLocal.format(timeFormatter)} - ${event.endDateTimeLocal.format(timeFormatter)}")
         appendLine("📍 Ubicación: ${event.location}")
         appendLine("🏷️ Categoría: ${event.category}")
         appendLine("🏢 Departamento: ${event.department}")

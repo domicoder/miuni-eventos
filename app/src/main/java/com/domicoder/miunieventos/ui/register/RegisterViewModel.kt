@@ -52,7 +52,7 @@ class RegisterViewModel @Inject constructor(
                                 email = user.email,
                                 photoUrl = user.photoUrl,
                                 department = user.department,
-                                isOrganizer = user.isOrganizer
+                                organizer = user.isOrganizer
                             )
                         )
                     },
@@ -101,7 +101,7 @@ class RegisterViewModel @Inject constructor(
                                         email = user.email,
                                         photoUrl = user.photoUrl,
                                         department = user.department,
-                                        isOrganizer = user.isOrganizer
+                                        organizer = user.isOrganizer
                                     )
                                 )
                             },

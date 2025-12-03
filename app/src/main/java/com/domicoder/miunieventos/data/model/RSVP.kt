@@ -2,7 +2,7 @@ package com.domicoder.miunieventos.data.model
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentId
-import com.google.firebase.firestore.PropertyName
+import com.google.firebase.firestore.Exclude
 import java.time.LocalDateTime
 import java.time.ZoneId
 
@@ -13,22 +13,20 @@ data class RSVP(
     val userId: String = "",
     val status: RSVPStatus = RSVPStatus.GOING,
     val checkedIn: Boolean = false,
-    @get:PropertyName("checkedInAt")
-    @set:PropertyName("checkedInAt")
-    var checkedInAtTimestamp: Timestamp? = null,
-    @get:PropertyName("createdAt")
-    @set:PropertyName("createdAt")
-    var createdAtTimestamp: Timestamp? = null
+    var checkedInAt: Timestamp? = null,
+    var createdAt: Timestamp? = null
 ) {
-    val checkedInAt: LocalDateTime?
-        get() = checkedInAtTimestamp?.toDate()?.toInstant()
+    @get:Exclude
+    val checkedInAtLocal: LocalDateTime?
+        get() = checkedInAt?.toDate()?.toInstant()
             ?.atZone(ZoneId.systemDefault())?.toLocalDateTime()
-    
-    val createdAt: LocalDateTime
-        get() = createdAtTimestamp?.toDate()?.toInstant()
+
+    @get:Exclude
+    val createdAtLocal: LocalDateTime
+        get() = createdAt?.toDate()?.toInstant()
             ?.atZone(ZoneId.systemDefault())?.toLocalDateTime()
             ?: LocalDateTime.now()
-    
+
     companion object {
         fun fromLocalDateTime(dateTime: LocalDateTime): Timestamp {
             return Timestamp(
@@ -37,10 +35,7 @@ data class RSVP(
                 )
             )
         }
-        
-        /**
-         * Creates an RSVP with LocalDateTime values (convenience constructor)
-         */
+
         fun create(
             id: String = "",
             eventId: String,
@@ -56,8 +51,8 @@ data class RSVP(
                 userId = userId,
                 status = status,
                 checkedIn = checkedIn,
-                checkedInAtTimestamp = checkedInAt?.let { fromLocalDateTime(it) },
-                createdAtTimestamp = fromLocalDateTime(createdAt)
+                checkedInAt = checkedInAt?.let { fromLocalDateTime(it) },
+                createdAt = fromLocalDateTime(createdAt)
             )
         }
 

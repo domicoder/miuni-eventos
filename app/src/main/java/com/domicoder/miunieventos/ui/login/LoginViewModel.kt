@@ -60,7 +60,7 @@ class LoginViewModel @Inject constructor(
                                 email = user.email,
                                 photoUrl = user.photoUrl,
                                 department = user.department,
-                                isOrganizer = user.isOrganizer
+                                organizer = user.isOrganizer
                             )
                         )
                     },
@@ -126,7 +126,7 @@ class LoginViewModel @Inject constructor(
                                     email = user.email,
                                     photoUrl = user.photoUrl,
                                     department = user.department,
-                                    isOrganizer = user.isOrganizer
+                                    organizer = user.isOrganizer
                                 )
                                 Log.d(TAG, "Setting authResult to Success")
                                 _authResult.value = AuthResult.Success(dataUser)

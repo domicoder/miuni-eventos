@@ -129,11 +129,11 @@ fun DiscoverScreen(
         } else true
         
         val matchesStartDate = if (selectedStartDate != null) {
-            event.startDateTime.toLocalDate() >= selectedStartDate
+            event.startDateTimeLocal.toLocalDate() >= selectedStartDate
         } else true
         
         val matchesEndDate = if (selectedEndDate != null) {
-            event.startDateTime.toLocalDate() <= selectedEndDate
+            event.startDateTimeLocal.toLocalDate() <= selectedEndDate
         } else true
         
         // Filter for selected events (GOING status) when showOnlySelected is true and user is authenticated

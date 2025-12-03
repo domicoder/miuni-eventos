@@ -106,7 +106,7 @@ class FirestoreInitializer @Inject constructor(
                 email = "juanito.alimana@unicda.edu.do",
                 photoUrl = "https://i.pravatar.cc/300?u=user1",
                 department = "Ingeniería Software",
-                isOrganizer = true
+                organizer = true
             ),
             User(
                 id = "user2",
@@ -114,7 +114,7 @@ class FirestoreInitializer @Inject constructor(
                 email = "maria.gonzalez@unicda.edu.do",
                 photoUrl = "https://i.pravatar.cc/300?u=user2",
                 department = "Ciencias Sociales",
-                isOrganizer = true
+                organizer = true
             ),
             User(
                 id = "user3",
@@ -122,7 +122,7 @@ class FirestoreInitializer @Inject constructor(
                 email = "carlos.rodriguez@unicda.edu.do",
                 photoUrl = "https://i.pravatar.cc/300?u=user3",
                 department = "Medicina",
-                isOrganizer = false
+                organizer = false
             )
         )
         

@@ -87,10 +87,10 @@ fun EditEventScreen(
             val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
             val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
             
-            startDate = eventData.startDateTime.format(dateFormatter)
-            startTime = eventData.startDateTime.format(timeFormatter)
-            endDate = eventData.endDateTime.format(dateFormatter)
-            endTime = eventData.endDateTime.format(timeFormatter)
+            startDate = eventData.startDateTimeLocal.format(dateFormatter)
+            startTime = eventData.startDateTimeLocal.format(timeFormatter)
+            endDate = eventData.endDateTimeLocal.format(dateFormatter)
+            endTime = eventData.endDateTimeLocal.format(timeFormatter)
         }
     }
     

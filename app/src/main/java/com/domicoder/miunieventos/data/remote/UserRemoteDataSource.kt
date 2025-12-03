@@ -48,7 +48,7 @@ class UserRemoteDataSource @Inject constructor(
      */
     fun getOrganizers(): Flow<List<User>> = callbackFlow {
         val listener = usersCollection
-            .whereEqualTo("isOrganizer", true)
+            .whereEqualTo("organizer", true)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     Log.e(TAG, "Error getting organizers", error)

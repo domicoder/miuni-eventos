@@ -115,7 +115,7 @@ class AttendanceRemoteDataSource @Inject constructor(
                         attendeesWithDetails.add(
                             AttendeeWithDetails(
                                 id = attendance.userId,
-                                checkInTime = attendance.checkInTime,
+                                checkInTime = attendance.checkInTimeLocal,
                                 notes = attendance.notes
                             )
                         )
@@ -253,7 +253,7 @@ class AttendanceRemoteDataSource @Inject constructor(
                             photoUrl = it.photoUrl,
                             department = it.department,
                             isOrganizer = it.isOrganizer,
-                            checkInTime = attendance.checkInTime,
+                            checkInTime = attendance.checkInTimeLocal,
                             notes = attendance.notes
                         )
                     }

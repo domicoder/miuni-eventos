@@ -36,14 +36,13 @@ class AuthRepository @Inject constructor(
                 return AuthResult.Error("El usuario ya existe")
             }
             
-            // Create new user
             val newUser = User(
                 id = generateUserId(email),
                 name = name,
                 email = email,
                 photoUrl = null,
                 department = department,
-                isOrganizer = false // Default to false, can be changed later
+                organizer = false
             )
             
             val result = userRemoteDataSource.insertUser(newUser)

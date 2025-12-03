@@ -2,7 +2,7 @@ package com.domicoder.miunieventos.data.model
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentId
-import com.google.firebase.firestore.PropertyName
+import com.google.firebase.firestore.Exclude
 import java.time.LocalDateTime
 import java.time.ZoneId
 
@@ -16,43 +16,38 @@ data class Event(
     val locationId: String? = null,
     val latitude: Double? = null,
     val longitude: Double? = null,
-    @get:PropertyName("startDateTime")
-    @set:PropertyName("startDateTime")
-    var startDateTimeTimestamp: Timestamp? = null,
-    @get:PropertyName("endDateTime")
-    @set:PropertyName("endDateTime")
-    var endDateTimeTimestamp: Timestamp? = null,
+    var startDateTime: Timestamp? = null,
+    var endDateTime: Timestamp? = null,
     val category: String = "",
     val department: String = "",
     val organizerId: String = "",
-    @get:PropertyName("createdAt")
-    @set:PropertyName("createdAt")
-    var createdAtTimestamp: Timestamp? = null,
-    @get:PropertyName("updatedAt")
-    @set:PropertyName("updatedAt")
-    var updatedAtTimestamp: Timestamp? = null
+    var createdAt: Timestamp? = null,
+    var updatedAt: Timestamp? = null
 ) {
-    // Computed properties for LocalDateTime conversion
-    val startDateTime: LocalDateTime
-        get() = startDateTimeTimestamp?.toDate()?.toInstant()
+    @get:Exclude
+    val startDateTimeLocal: LocalDateTime
+        get() = startDateTime?.toDate()?.toInstant()
             ?.atZone(ZoneId.systemDefault())?.toLocalDateTime()
             ?: LocalDateTime.now()
-    
-    val endDateTime: LocalDateTime
-        get() = endDateTimeTimestamp?.toDate()?.toInstant()
+
+    @get:Exclude
+    val endDateTimeLocal: LocalDateTime
+        get() = endDateTime?.toDate()?.toInstant()
             ?.atZone(ZoneId.systemDefault())?.toLocalDateTime()
             ?: LocalDateTime.now()
-    
-    val createdAt: LocalDateTime
-        get() = createdAtTimestamp?.toDate()?.toInstant()
+
+    @get:Exclude
+    val createdAtLocal: LocalDateTime
+        get() = createdAt?.toDate()?.toInstant()
             ?.atZone(ZoneId.systemDefault())?.toLocalDateTime()
             ?: LocalDateTime.now()
-    
-    val updatedAt: LocalDateTime
-        get() = updatedAtTimestamp?.toDate()?.toInstant()
+
+    @get:Exclude
+    val updatedAtLocal: LocalDateTime
+        get() = updatedAt?.toDate()?.toInstant()
             ?.atZone(ZoneId.systemDefault())?.toLocalDateTime()
             ?: LocalDateTime.now()
-    
+
     companion object {
         fun fromLocalDateTime(dateTime: LocalDateTime): Timestamp {
             return Timestamp(
@@ -61,10 +56,7 @@ data class Event(
                 )
             )
         }
-        
-        /**
-         * Creates an Event with LocalDateTime values (convenience constructor)
-         */
+
         fun create(
             id: String = "",
             title: String,
@@ -91,20 +83,17 @@ data class Event(
                 locationId = locationId,
                 latitude = latitude,
                 longitude = longitude,
-                startDateTimeTimestamp = fromLocalDateTime(startDateTime),
-                endDateTimeTimestamp = fromLocalDateTime(endDateTime),
+                startDateTime = fromLocalDateTime(startDateTime),
+                endDateTime = fromLocalDateTime(endDateTime),
                 category = category,
                 department = department,
                 organizerId = organizerId,
-                createdAtTimestamp = fromLocalDateTime(createdAt),
-                updatedAtTimestamp = fromLocalDateTime(updatedAt)
+                createdAt = fromLocalDateTime(createdAt),
+                updatedAt = fromLocalDateTime(updatedAt)
             )
         }
     }
-    
-    /**
-     * Creates a copy with updated LocalDateTime values
-     */
+
     fun copyWithDateTime(
         id: String = this.id,
         title: String = this.title,
@@ -114,13 +103,13 @@ data class Event(
         locationId: String? = this.locationId,
         latitude: Double? = this.latitude,
         longitude: Double? = this.longitude,
-        startDateTime: LocalDateTime = this.startDateTime,
-        endDateTime: LocalDateTime = this.endDateTime,
+        startDateTime: LocalDateTime = this.startDateTimeLocal,
+        endDateTime: LocalDateTime = this.endDateTimeLocal,
         category: String = this.category,
         department: String = this.department,
         organizerId: String = this.organizerId,
-        createdAt: LocalDateTime = this.createdAt,
-        updatedAt: LocalDateTime = this.updatedAt
+        createdAt: LocalDateTime = this.createdAtLocal,
+        updatedAt: LocalDateTime = this.updatedAtLocal
     ): Event {
         return copy(
             id = id,
@@ -131,13 +120,13 @@ data class Event(
             locationId = locationId,
             latitude = latitude,
             longitude = longitude,
-            startDateTimeTimestamp = fromLocalDateTime(startDateTime),
-            endDateTimeTimestamp = fromLocalDateTime(endDateTime),
+            startDateTime = fromLocalDateTime(startDateTime),
+            endDateTime = fromLocalDateTime(endDateTime),
             category = category,
             department = department,
             organizerId = organizerId,
-            createdAtTimestamp = fromLocalDateTime(createdAt),
-            updatedAtTimestamp = fromLocalDateTime(updatedAt)
+            createdAt = fromLocalDateTime(createdAt),
+            updatedAt = fromLocalDateTime(updatedAt)
         )
     }
 }

@@ -217,7 +217,7 @@ class UserStateManager @Inject constructor(
                 val updatedUser = currentUser.copy(
                     name = name ?: currentUser.name,
                     department = department ?: currentUser.department,
-                    isOrganizer = isOrganizer ?: currentUser.isOrganizer
+                    organizer = isOrganizer ?: currentUser.isOrganizer
                 )
                 _currentUser.value = updatedUser
                 _isOrganizer.value = updatedUser.isOrganizer

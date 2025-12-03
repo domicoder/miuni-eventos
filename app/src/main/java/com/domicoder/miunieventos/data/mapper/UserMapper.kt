@@ -32,7 +32,7 @@ object UserMapper {
             email = domainUser.email,
             photoUrl = domainUser.photoUrl,
             department = domainUser.department,
-            isOrganizer = domainUser.isOrganizer
+            organizer = domainUser.isOrganizer
         )
     }
 }

@@ -516,6 +516,7 @@ fun DiscoverScreen(
                                 }
                             ) {
                                 DatePicker(
+                                    modifier = Modifier.padding(16.dp),
                                     state = startDatePickerState,
                                     title = { Text("Seleccionar fecha de inicio") }
                                 )
@@ -581,6 +582,7 @@ fun DiscoverScreen(
                                 }
                             ) {
                                 DatePicker(
+                                    modifier = Modifier.padding(16.dp),
                                     state = endDatePickerState,
                                     title = { Text("Seleccionar fecha de fin") }
                                 )

@@ -325,3 +325,5 @@ temp/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+functions/node_modules/

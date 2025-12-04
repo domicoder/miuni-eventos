@@ -505,13 +505,6 @@ fun EventDetailScreen(
                             
                             // Attendance Section for Organizers
                             if (isAuthenticated && eventData.organizerId == currentUserId) {
-                                // Debug logging
-                                println("DEBUG: Showing attendance section for organizer")
-                                println("DEBUG: eventData.organizerId: ${eventData.organizerId}")
-                                println("DEBUG: currentUserId: $currentUserId")
-                                println("DEBUG: attendees count: ${attendees.size}")
-                                println("DEBUG: attendanceCount: $attendanceCount")
-                                
                                 // Organizer view - show attendance list
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
@@ -639,20 +632,8 @@ fun EventDetailScreen(
                                         }
                                     }
                                 }
-                            } else {
-                                println("DEBUG: Attendance section not shown for organizer")
                             }
-                            
-                            // Debug logging for attendance section visibility
-                            if (isAuthenticated) {
-                                println("DEBUG: User is authenticated")
-                                println("DEBUG: eventData.organizerId: ${eventData.organizerId}")
-                                println("DEBUG: currentUserId: $currentUserId")
-                                println("DEBUG: Is organizer: ${eventData.organizerId == currentUserId}")
-                            } else {
-                                println("DEBUG: User is NOT authenticated")
-                            }
-                            
+
                             // Add to Calendar Button
                             if (isAuthenticated) {
                                 Button(

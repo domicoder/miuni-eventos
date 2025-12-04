@@ -276,7 +276,7 @@ fun ScannerScreen(
                                     modifier = Modifier.padding(24.dp)
                                 ) {
                                     Text(
-                                        text = "Error",
+                                        text = "Aviso",
                                         style = MaterialTheme.typography.headlineMedium,
                                         color = MaterialTheme.colorScheme.onErrorContainer
                                     )

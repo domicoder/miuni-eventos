@@ -23,11 +23,13 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Title
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -76,6 +78,7 @@ import java.util.Calendar
 @Composable
 fun EditEventScreen(
     navController: NavController,
+    currentUserId: String = "",
     viewModel: EditEventViewModel = hiltViewModel()
 ) {
     val event by viewModel.event.collectAsState()
@@ -84,10 +87,15 @@ fun EditEventScreen(
     val isUpdating by viewModel.isUpdating.collectAsState()
     val isUploadingImage by viewModel.isUploadingImage.collectAsState()
     val updateSuccess by viewModel.updateSuccess.collectAsState()
+    val deleteSuccess by viewModel.deleteSuccess.collectAsState()
+    val isDeleting by viewModel.isDeleting.collectAsState()
     val selectedImageUri by viewModel.selectedImageUri.collectAsState()
     val removeExistingImage by viewModel.removeExistingImage.collectAsState()
     val categories by viewModel.categories.collectAsState()
     val departments by viewModel.departments.collectAsState()
+
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    val isEventOwner = event?.organizerId == currentUserId
 
     val context = LocalContext.current
 
@@ -135,6 +143,69 @@ fun EditEventScreen(
             viewModel.resetUpdateSuccess()
             navController.popBackStack()
         }
+    }
+
+    LaunchedEffect(deleteSuccess) {
+        if (deleteSuccess) {
+            viewModel.resetDeleteSuccess()
+            // Pop back to the organized events list
+            navController.popBackStack()
+        }
+    }
+
+    // Delete confirmation dialog
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            title = {
+                Text(
+                    text = "Eliminar Evento",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "¿Estás seguro de que deseas eliminar este evento? Esta acción no se puede deshacer y se eliminarán también todas las confirmaciones de asistencia asociadas."
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteDialog = false
+                        viewModel.deleteEvent(currentUserId)
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    ),
+                    enabled = !isDeleting
+                ) {
+                    if (isDeleting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            color = MaterialTheme.colorScheme.onError,
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Text("Eliminar")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showDeleteDialog = false },
+                    enabled = !isDeleting
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 
     fun showStartDatePicker() {
@@ -252,6 +323,21 @@ fun EditEventScreen(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Volver"
                         )
+                    }
+                },
+                actions = {
+                    // Only show delete button if user is the event owner
+                    if (isEventOwner && !isLoading) {
+                        IconButton(
+                            onClick = { showDeleteDialog = true },
+                            enabled = !isUpdating && !isDeleting
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Eliminar evento",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

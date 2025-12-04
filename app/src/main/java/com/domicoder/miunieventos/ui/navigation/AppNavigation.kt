@@ -223,7 +223,8 @@ fun AppNavigation(
             ) { backStackEntry ->
                 val eventId = backStackEntry.arguments?.getString("eventId") ?: ""
                 EditEventScreen(
-                    navController = navController
+                    navController = navController,
+                    currentUserId = currentUser?.id ?: ""
                 )
             }
             

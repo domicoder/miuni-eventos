@@ -55,6 +55,12 @@ open class EditEventViewModel @Inject constructor(
     private val _updateSuccess = MutableStateFlow(false)
     val updateSuccess: StateFlow<Boolean> = _updateSuccess.asStateFlow()
 
+    private val _deleteSuccess = MutableStateFlow(false)
+    val deleteSuccess: StateFlow<Boolean> = _deleteSuccess.asStateFlow()
+
+    private val _isDeleting = MutableStateFlow(false)
+    val isDeleting: StateFlow<Boolean> = _isDeleting.asStateFlow()
+
     private val _selectedImageUri = MutableStateFlow<Uri?>(null)
     val selectedImageUri: StateFlow<Uri?> = _selectedImageUri.asStateFlow()
 
@@ -185,5 +191,64 @@ open class EditEventViewModel @Inject constructor(
 
     fun resetUpdateSuccess() {
         _updateSuccess.value = false
+    }
+
+    fun resetDeleteSuccess() {
+        _deleteSuccess.value = false
+    }
+
+    /**
+     * Delete the current event.
+     * Only the organizer who owns the event can delete it.
+     * 
+     * @param currentUserId The ID of the current user attempting to delete
+     */
+    fun deleteEvent(currentUserId: String) {
+        if (eventId.isEmpty()) return
+
+        viewModelScope.launch {
+            _isDeleting.value = true
+            _error.value = null
+
+            try {
+                val currentEvent = _event.value
+                if (currentEvent == null) {
+                    _error.value = "No se pudo cargar el evento para eliminar"
+                    _isDeleting.value = false
+                    return@launch
+                }
+
+                // Verify ownership
+                if (currentEvent.organizerId != currentUserId) {
+                    _error.value = "Solo el organizador del evento puede eliminarlo"
+                    _isDeleting.value = false
+                    return@launch
+                }
+
+                // Delete the event image if it exists
+                currentEvent.imageUrl?.let { imageUrl ->
+                    imageStorageDataSource.deleteEventImage(imageUrl)
+                }
+
+                // Delete the event from Firestore
+                val result = eventRepository.deleteEventById(eventId)
+                if (result.isSuccess) {
+                    _deleteSuccess.value = true
+                } else {
+                    _error.value = "Error al eliminar evento: ${result.exceptionOrNull()?.message}"
+                }
+            } catch (e: Exception) {
+                _error.value = "Error al eliminar evento: ${e.message}"
+            } finally {
+                _isDeleting.value = false
+            }
+        }
+    }
+
+    /**
+     * Check if the given user is the owner of this event
+     */
+    fun isEventOwner(userId: String): Boolean {
+        return _event.value?.organizerId == userId
     }
 }

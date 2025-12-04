@@ -56,11 +56,25 @@ fun AppNavigation(
     // Deep link handling
     val deepLinkEvent by DeepLinkManager.deepLinkEvent.collectAsState()
     
-    // Handle deep link navigation
-    LaunchedEffect(deepLinkEvent) {
-        deepLinkEvent?.let { eventId ->
+    // Track if NavHost is ready for navigation
+    var isNavHostReady by remember { mutableStateOf(false) }
+    
+    // Mark NavHost as ready after first composition
+    LaunchedEffect(Unit) {
+        isNavHostReady = true
+    }
+    
+    // Handle deep link navigation - wait for NavHost to be ready
+    LaunchedEffect(deepLinkEvent, isNavHostReady) {
+        if (isNavHostReady && deepLinkEvent != null) {
+            val eventId = deepLinkEvent!!
             Log.d("AppNavigation", "Deep link received, navigating to event: $eventId")
-            navController.navigate(NavRoutes.EventDetail.createRoute(eventId))
+            // Small delay to ensure NavHost is fully initialized
+            kotlinx.coroutines.delay(100)
+            navController.navigate(NavRoutes.EventDetail.createRoute(eventId)) {
+                // Pop back to Discover to avoid stacking multiple Discover screens
+                popUpTo(NavRoutes.Discover.route) { inclusive = false }
+            }
             DeepLinkManager.clearDeepLinkEvent()
         }
     }

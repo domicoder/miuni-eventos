@@ -4,7 +4,6 @@ import android.util.Log
 import com.domicoder.miunieventos.data.model.Attendance
 import com.domicoder.miunieventos.data.model.User
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -65,11 +64,11 @@ class AttendanceRemoteDataSource @Inject constructor(
     
     /**
      * Get attendance records by event ID, ordered by check-in time (descending)
+     * Note: Sorting is done in-memory to avoid requiring a composite Firestore index
      */
     fun getAttendanceByEventOrdered(eventId: String): Flow<List<Attendance>> = callbackFlow {
         val listener = attendanceCollection
             .whereEqualTo("eventId", eventId)
-            .orderBy("checkInTime", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     Log.e(TAG, "Error getting ordered attendance by event", error)
@@ -79,7 +78,7 @@ class AttendanceRemoteDataSource @Inject constructor(
                 
                 val attendanceList = snapshot?.documents?.mapNotNull { doc ->
                     doc.toObject(Attendance::class.java)
-                } ?: emptyList()
+                }?.sortedByDescending { it.checkInTime } ?: emptyList()
                 
                 trySend(attendanceList)
             }
@@ -89,11 +88,11 @@ class AttendanceRemoteDataSource @Inject constructor(
     
     /**
      * Get attendees with their user details
+     * Note: Sorting is done in-memory to avoid requiring a composite Firestore index
      */
     fun getAttendeesWithDetails(eventId: String): Flow<List<AttendeeWithDetails>> = callbackFlow {
         val listener = attendanceCollection
             .whereEqualTo("eventId", eventId)
-            .orderBy("checkInTime", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     Log.e(TAG, "Error getting attendees with details", error)
@@ -103,7 +102,7 @@ class AttendanceRemoteDataSource @Inject constructor(
                 
                 val attendanceList = snapshot?.documents?.mapNotNull { doc ->
                     doc.toObject(Attendance::class.java)
-                } ?: emptyList()
+                }?.sortedByDescending { it.checkInTime } ?: emptyList()
                 
                 // Fetch user details for each attendance
                 val attendeesWithDetails = mutableListOf<AttendeeWithDetails>()
@@ -227,18 +226,18 @@ class AttendanceRemoteDataSource @Inject constructor(
     
     /**
      * Get full attendees with user details (fetches user data from users collection)
+     * Note: Sorting is done in-memory to avoid requiring a composite Firestore index
      */
     suspend fun getFullAttendeesWithDetails(eventId: String): List<AttendeeWithDetails> {
         return try {
             val attendanceSnapshot = attendanceCollection
                 .whereEqualTo("eventId", eventId)
-                .orderBy("checkInTime", Query.Direction.DESCENDING)
                 .get()
                 .await()
             
             val attendanceList = attendanceSnapshot.documents.mapNotNull { doc ->
                 doc.toObject(Attendance::class.java)
-            }
+            }.sortedByDescending { it.checkInTime }
             
             attendanceList.mapNotNull { attendance ->
                 try {

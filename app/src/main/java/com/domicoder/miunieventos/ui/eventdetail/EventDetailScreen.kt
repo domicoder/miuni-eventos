@@ -72,6 +72,7 @@ import android.content.Context
 import android.widget.Toast
 import android.graphics.Bitmap
 import androidx.compose.runtime.LaunchedEffect
+import com.domicoder.miunieventos.ui.navigation.NavRoutes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,6 +89,7 @@ fun EventDetailScreen(
     val userRSVP by viewModel.userRSVP.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val accessStatus by viewModel.accessStatus.collectAsState()
     
     // Attendance data for organizers
     val attendees by viewModel.attendees.collectAsState()
@@ -112,6 +114,33 @@ fun EventDetailScreen(
     LaunchedEffect(eventId) {
         if (eventId.isNotEmpty()) {
             viewModel.loadEvent(eventId)
+        }
+    }
+
+    // Handle access denied - redirect to Discover
+    LaunchedEffect(accessStatus) {
+        when (accessStatus) {
+            EventAccessStatus.DENIED_PAST -> {
+                Toast.makeText(
+                    context,
+                    "Este evento ya terminó y no participaste en él",
+                    Toast.LENGTH_LONG
+                ).show()
+                navController.navigate(NavRoutes.Discover.route) {
+                    popUpTo(NavRoutes.Discover.route) { inclusive = true }
+                }
+            }
+            EventAccessStatus.DENIED_IN_PROGRESS -> {
+                Toast.makeText(
+                    context,
+                    "Este evento está en progreso. Solo pueden acceder los usuarios que confirmaron asistencia",
+                    Toast.LENGTH_LONG
+                ).show()
+                navController.navigate(NavRoutes.Discover.route) {
+                    popUpTo(NavRoutes.Discover.route) { inclusive = true }
+                }
+            }
+            else -> { /* Access allowed or still loading */ }
         }
     }
     

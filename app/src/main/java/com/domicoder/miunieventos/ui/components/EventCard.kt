@@ -70,7 +70,7 @@ fun EventCard(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp)
+                    .height(210.dp)
                     .clip(MaterialTheme.shapes.medium)
             )
             

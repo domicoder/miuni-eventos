@@ -23,7 +23,6 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Title
 import androidx.compose.material.icons.filled.Visibility
@@ -65,6 +64,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.domicoder.miunieventos.data.model.EventStatus
 import com.domicoder.miunieventos.ui.components.ImagePickerField
+import com.domicoder.miunieventos.ui.components.LocationPickerField
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -91,6 +91,8 @@ fun CreateEventScreen(
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
+    var latitude by remember { mutableStateOf<Double?>(null) }
+    var longitude by remember { mutableStateOf<Double?>(null) }
     var category by remember { mutableStateOf("") }
     var department by remember { mutableStateOf("") }
     var startDate by remember { mutableStateOf<LocalDate?>(null) }
@@ -216,6 +218,8 @@ fun CreateEventScreen(
                 title = title,
                 description = description,
                 location = location,
+                latitude = latitude,
+                longitude = longitude,
                 category = category,
                 department = department,
                 organizerId = organizerId,
@@ -373,25 +377,17 @@ fun CreateEventScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            OutlinedTextField(
-                value = location,
-                onValueChange = { location = it },
-                label = { Text("Ubicación *") },
-                placeholder = { Text("Ej: Auditorio Principal, Edificio A") },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+            LocationPickerField(
+                locationText = location,
+                latitude = latitude,
+                longitude = longitude,
+                onLocationSelected = { selectedLocation ->
+                    location = selectedLocation.address
+                    latitude = selectedLocation.latitude
+                    longitude = selectedLocation.longitude
                 },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                )
+                label = "Ubicación *",
+                placeholder = "Selecciona la ubicación del evento"
             )
             
             Spacer(modifier = Modifier.height(16.dp))

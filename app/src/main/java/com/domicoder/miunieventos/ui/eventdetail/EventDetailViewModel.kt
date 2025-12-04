@@ -105,29 +105,35 @@ class EventDetailViewModel @Inject constructor(
     fun updateRSVP(status: RSVPStatus) {
         viewModelScope.launch {
             try {
-                val currentRSVP = _userRSVP.value
-                val newRSVP = if (currentRSVP != null) {
-                    RSVP.create(
-                        id = currentRSVP.id,
-                        eventId = eventId,
-                        userId = _currentUserId.value,
-                        status = status
-                    )
+                if (status == RSVPStatus.NOT_GOING) {
+                    _userRSVP.value?.let { rsvp ->
+                        rsvpRepository.deleteRSVP(rsvp)
+                    }
+                    _userRSVP.value = null
+                    RSVPStateManager.removeRSVPStatus(_currentUserId.value, eventId)
                 } else {
-                    RSVP.create(
-                        eventId = eventId,
-                        userId = _currentUserId.value,
-                        status = status
-                    )
+                    val currentRSVP = _userRSVP.value
+                    val newRSVP = if (currentRSVP != null) {
+                        RSVP.create(
+                            id = currentRSVP.id,
+                            eventId = eventId,
+                            userId = _currentUserId.value,
+                            status = status
+                        )
+                    } else {
+                        RSVP.create(
+                            eventId = eventId,
+                            userId = _currentUserId.value,
+                            status = status
+                        )
+                    }
+
+                    rsvpRepository.upsertRSVP(newRSVP)
+                    _userRSVP.value = newRSVP
+                    RSVPStateManager.updateRSVPStatus(_currentUserId.value, eventId, status)
                 }
-                
-                rsvpRepository.upsertRSVP(newRSVP)
-                _userRSVP.value = newRSVP
-                
-                // Update the shared RSVP state manager
-                RSVPStateManager.updateRSVPStatus(_currentUserId.value, eventId, status)
             } catch (e: Exception) {
-                // Handle error
+                _error.value = "Error al actualizar RSVP: ${e.message}"
             }
         }
     }

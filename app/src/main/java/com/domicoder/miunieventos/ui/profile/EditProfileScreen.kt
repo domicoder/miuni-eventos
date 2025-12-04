@@ -72,10 +72,11 @@ fun EditProfileScreen(
     val error by viewModel.error.collectAsState()
     val isUpdating by viewModel.isUpdating.collectAsState()
     val updateSuccess by viewModel.updateSuccess.collectAsState()
-    
+    val departmentsFromFirestore by viewModel.departments.collectAsState()
+
     var name by remember { mutableStateOf("") }
     var department by remember { mutableStateOf("") }
-    
+
     // Update local state when user data is loaded
     LaunchedEffect(user) {
         user?.let {
@@ -83,17 +84,8 @@ fun EditProfileScreen(
             department = it.department ?: ""
         }
     }
-    
-    val departments = listOf(
-        "Ingeniería Software",
-        "Ciencias Sociales", 
-        "Medicina",
-        "Artes",
-        "Deportes",
-        "Asociación Estudiantil",
-        "Ingeniería Informática",
-        "Otro"
-    )
+
+    val departments = departmentsFromFirestore.map { it.name }
     
     fun handleSave() {
         if (name.isNotBlank() && department.isNotBlank()) {

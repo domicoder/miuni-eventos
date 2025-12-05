@@ -151,7 +151,8 @@ class EventDetailViewModel @Inject constructor(
      * Determines if the user can access this event based on:
      * - Event hasn't started yet: Anyone can access
      * - Event is in progress: Only users with RSVP (GOING/MAYBE) or organizer can access
-     * - Event has ended: Only users who attended or organizer can access
+     * - Event ended within 24 hours: Users with RSVP GOING can still access
+     * - Event ended more than 24 hours ago: Only users who attended or organizer can access
      */
     private fun checkEventAccess(
         event: Event,
@@ -163,8 +164,9 @@ class EventDetailViewModel @Inject constructor(
         val now = LocalDateTime.now()
         val startTime = event.startDateTimeLocal
         val endTime = event.endDateTimeLocal
+        val oneDayAfterEnd = endTime.plusDays(1)
 
-        Log.d(TAG, "Checking access - now: $now, start: $startTime, end: $endTime")
+        Log.d(TAG, "Checking access - now: $now, start: $startTime, end: $endTime, oneDayAfter: $oneDayAfterEnd")
         Log.d(TAG, "User info - userId: $userId, hasRSVP: ${rsvp != null}, rsvpStatus: ${rsvp?.status}, hasAttended: $hasAttended, isOrganizer: $isOrganizer")
 
         // Organizer always has access
@@ -187,6 +189,9 @@ class EventDetailViewModel @Inject constructor(
             }
         }
 
+        val hasGoingRsvp = rsvp != null && rsvp.status == RSVPStatus.GOING
+        val hasValidRsvp = rsvp != null && (rsvp.status == RSVPStatus.GOING || rsvp.status == RSVPStatus.MAYBE)
+
         return when {
             // Event hasn't started yet - anyone can access
             now.isBefore(startTime) -> {
@@ -196,7 +201,6 @@ class EventDetailViewModel @Inject constructor(
             
             // Event is in progress - only users with RSVP can access
             now.isBefore(endTime) -> {
-                val hasValidRsvp = rsvp != null && (rsvp.status == RSVPStatus.GOING || rsvp.status == RSVPStatus.MAYBE)
                 if (hasValidRsvp || hasAttended) {
                     Log.d(TAG, "Access ALLOWED: Event in progress, user has RSVP or attended")
                     EventAccessStatus.ALLOWED
@@ -206,13 +210,24 @@ class EventDetailViewModel @Inject constructor(
                 }
             }
             
-            // Event has ended - only users who attended can access
-            else -> {
-                if (hasAttended) {
-                    Log.d(TAG, "Access ALLOWED: Event ended, user attended")
+            // Event ended but within 24 hours - users with GOING RSVP or attendance can access
+            now.isBefore(oneDayAfterEnd) -> {
+                if (hasGoingRsvp || hasAttended) {
+                    Log.d(TAG, "Access ALLOWED: Event ended <24h ago, user has GOING RSVP or attended")
                     EventAccessStatus.ALLOWED
                 } else {
-                    Log.d(TAG, "Access DENIED: Event ended, user didn't attend")
+                    Log.d(TAG, "Access DENIED: Event ended <24h ago, user didn't have GOING RSVP")
+                    EventAccessStatus.DENIED_PAST
+                }
+            }
+            
+            // Event ended more than 24 hours ago - only users who attended can access
+            else -> {
+                if (hasAttended) {
+                    Log.d(TAG, "Access ALLOWED: Event ended >24h ago, user attended")
+                    EventAccessStatus.ALLOWED
+                } else {
+                    Log.d(TAG, "Access DENIED: Event ended >24h ago, user didn't attend")
                     EventAccessStatus.DENIED_PAST
                 }
             }

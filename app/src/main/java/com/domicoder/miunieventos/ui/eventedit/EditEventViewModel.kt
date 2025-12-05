@@ -9,8 +9,10 @@ import com.domicoder.miunieventos.data.model.Department
 import com.domicoder.miunieventos.data.model.Event
 import com.domicoder.miunieventos.data.model.EventStatus
 import com.domicoder.miunieventos.data.remote.ImageStorageDataSource
+import com.domicoder.miunieventos.data.repository.AttendanceRepository
 import com.domicoder.miunieventos.data.repository.ConfigRepository
 import com.domicoder.miunieventos.data.repository.EventRepository
+import com.domicoder.miunieventos.data.repository.RSVPRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -26,6 +28,8 @@ open class EditEventViewModel @Inject constructor(
     private val eventRepository: EventRepository,
     private val imageStorageDataSource: ImageStorageDataSource,
     private val configRepository: ConfigRepository,
+    private val attendanceRepository: AttendanceRepository,
+    private val rsvpRepository: RSVPRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -67,6 +71,13 @@ open class EditEventViewModel @Inject constructor(
     private val _removeExistingImage = MutableStateFlow(false)
     val removeExistingImage: StateFlow<Boolean> = _removeExistingImage.asStateFlow()
 
+    // Attendance and RSVP counts
+    private val _attendanceCount = MutableStateFlow(0)
+    val attendanceCount: StateFlow<Int> = _attendanceCount.asStateFlow()
+
+    private val _rsvpGoingCount = MutableStateFlow(0)
+    val rsvpGoingCount: StateFlow<Int> = _rsvpGoingCount.asStateFlow()
+
     init {
         loadEvent()
     }
@@ -84,6 +95,14 @@ open class EditEventViewModel @Inject constructor(
 
                 if (eventData == null) {
                     _error.value = "Evento no encontrado"
+                } else {
+                    // Load attendance count
+                    val attendance = attendanceRepository.getAttendanceCountByEvent(eventId)
+                    _attendanceCount.value = attendance
+
+                    // Load RSVP GOING count
+                    val rsvpCount = rsvpRepository.countRSVPsByEventAndStatus(eventId, com.domicoder.miunieventos.data.model.RSVPStatus.GOING)
+                    _rsvpGoingCount.value = rsvpCount
                 }
             } catch (e: Exception) {
                 _error.value = "Error al cargar evento: ${e.message}"

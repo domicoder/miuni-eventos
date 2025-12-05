@@ -9,6 +9,33 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+// =============================================================================
+// Configuration Validation
+// =============================================================================
+// Check for required configuration files and provide helpful error messages
+
+val googleServicesFile = file("google-services.json")
+if (!googleServicesFile.exists()) {
+    logger.warn("""
+        |
+        |╔══════════════════════════════════════════════════════════════════════════════╗
+        |║  MISSING: google-services.json                                            ║
+        |╠══════════════════════════════════════════════════════════════════════════════╣
+        |║  The app/google-services.json file is required but not found.                ║
+        |║                                                                              ║
+        |║  To fix this:                                                                ║
+        |║  1. Go to https://console.firebase.google.com/                               ║
+        |║  2. Create/select your Firebase project                                      ║
+        |║  3. Add Android app with package: com.domicoder.miunieventos                 ║
+        |║  4. Download google-services.json                                            ║
+        |║  5. Place it in the app/ directory                                           ║
+        |║                                                                              ║
+        |║  See SETUP.md for detailed instructions                                   ║
+        |╚══════════════════════════════════════════════════════════════════════════════╝
+        |
+    """.trimMargin())
+}
+
 android {
     namespace = "com.domicoder.miunieventos"
     compileSdk = 34
@@ -28,10 +55,46 @@ android {
         val localPropertiesFile = project.rootProject.file("local.properties")
         if (localPropertiesFile.exists()) {
             properties.load(localPropertiesFile.inputStream())
+        } else {
+            logger.warn("""
+                |
+                |╔══════════════════════════════════════════════════════════════════════════════╗
+                |║  MISSING: local.properties                                                ║
+                |╠══════════════════════════════════════════════════════════════════════════════╣
+                |║  Create local.properties from the template:                                  ║
+                |║    cp local.properties.template local.properties                             ║
+                |║                                                                              ║
+                |║  Then add your MAPS_API_KEY to enable Google Maps functionality.             ║
+                |║                                                                              ║
+                |║  See SETUP.md for detailed instructions                                   ║
+                |╚══════════════════════════════════════════════════════════════════════════════╝
+                |
+            """.trimMargin())
         }
         
-        buildConfigField("String", "MAPS_API_KEY", "\"${properties.getProperty("MAPS_API_KEY", "")}\"")
-        manifestPlaceholders["MAPS_API_KEY"] = properties.getProperty("MAPS_API_KEY", "")
+        val mapsApiKey = properties.getProperty("MAPS_API_KEY", "")
+        if (mapsApiKey.isEmpty() || mapsApiKey == "your_maps_api_key_here" || mapsApiKey == "your_actual_maps_api_key_here") {
+            logger.warn("""
+                |
+                |╔══════════════════════════════════════════════════════════════════════════════╗
+                |║  MAPS_API_KEY not configured                                              ║
+                |╠══════════════════════════════════════════════════════════════════════════════╣
+                |║  Google Maps will not work without a valid API key.                          ║
+                |║                                                                              ║
+                |║  To fix this:                                                                ║
+                |║  1. Go to https://console.cloud.google.com/apis/credentials                  ║
+                |║  2. Create an API key                                                        ║
+                |║  3. Enable "Maps SDK for Android"                                            ║
+                |║  4. Add the key to local.properties: MAPS_API_KEY=your_key_here              ║
+                |║                                                                              ║
+                |║  See SETUP.md for detailed instructions                                   ║
+                |╚══════════════════════════════════════════════════════════════════════════════╝
+                |
+            """.trimMargin())
+        }
+        
+        buildConfigField("String", "MAPS_API_KEY", "\"${mapsApiKey}\"")
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
     buildTypes {

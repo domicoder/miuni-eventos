@@ -1,0 +1,61 @@
+{
+  "_COMMENT": "This is an EXAMPLE file showing the expected structure of google-services.json",
+  "_INSTRUCTIONS": [
+    "1. Go to https://console.firebase.google.com/",
+    "2. Create or select your Firebase project",
+    "3. Add an Android app with package: com.domicoder.miunieventos",
+    "4. Enable Authentication → Google Sign-In",
+    "5. Download google-services.json",
+    "6. Place it in this directory (app/google-services.json)",
+    "7. DO NOT rename this example file - create a new one from Firebase"
+  ],
+
+  "project_info": {
+    "project_number": "123456789012",
+    "project_id": "your-firebase-project-id",
+    "storage_bucket": "your-firebase-project-id.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:123456789012:android:abcdef123456",
+        "android_client_info": {
+          "package_name": "com.domicoder.miunieventos"
+        }
+      },
+      "oauth_client": [
+        {
+          "_COMMENT": "This oauth_client with client_type: 3 is REQUIRED for Google Sign-In",
+          "_IMPORTANT": "If this section is missing, enable Google Sign-In in Firebase Console",
+          "client_id": "123456789012-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com",
+          "client_type": 3
+        },
+        {
+          "client_id": "123456789012-androidclientid.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.domicoder.miunieventos",
+            "certificate_hash": "YOUR_SHA1_FINGERPRINT_HERE"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "123456789012-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
+

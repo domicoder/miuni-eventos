@@ -1,0 +1,12 @@
+{
+  "_COMMENT": "Rename this file to .firebaserc and update with your Firebase project ID",
+  "_INSTRUCTIONS": [
+    "1. Copy this file: cp .firebaserc.example .firebaserc",
+    "2. Replace 'your-firebase-project-id' with your actual Firebase project ID",
+    "3. Or run: firebase use --add"
+  ],
+  "projects": {
+    "default": "your-firebase-project-id"
+  }
+}
+

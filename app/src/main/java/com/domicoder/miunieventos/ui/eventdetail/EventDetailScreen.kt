@@ -72,6 +72,7 @@ import android.content.Context
 import android.widget.Toast
 import android.graphics.Bitmap
 import androidx.compose.runtime.LaunchedEffect
+import com.domicoder.miunieventos.ui.navigation.NavRoutes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,6 +89,7 @@ fun EventDetailScreen(
     val userRSVP by viewModel.userRSVP.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val accessStatus by viewModel.accessStatus.collectAsState()
     
     // Attendance data for organizers
     val attendees by viewModel.attendees.collectAsState()
@@ -112,6 +114,33 @@ fun EventDetailScreen(
     LaunchedEffect(eventId) {
         if (eventId.isNotEmpty()) {
             viewModel.loadEvent(eventId)
+        }
+    }
+
+    // Handle access denied - redirect to Discover
+    LaunchedEffect(accessStatus) {
+        when (accessStatus) {
+            EventAccessStatus.DENIED_PAST -> {
+                Toast.makeText(
+                    context,
+                    "Este evento ya terminó y no participaste en él",
+                    Toast.LENGTH_LONG
+                ).show()
+                navController.navigate(NavRoutes.Discover.route) {
+                    popUpTo(NavRoutes.Discover.route) { inclusive = true }
+                }
+            }
+            EventAccessStatus.DENIED_IN_PROGRESS -> {
+                Toast.makeText(
+                    context,
+                    "Este evento está en progreso. Solo pueden acceder los usuarios que confirmaron asistencia",
+                    Toast.LENGTH_LONG
+                ).show()
+                navController.navigate(NavRoutes.Discover.route) {
+                    popUpTo(NavRoutes.Discover.route) { inclusive = true }
+                }
+            }
+            else -> { /* Access allowed or still loading */ }
         }
     }
     
@@ -177,7 +206,7 @@ fun EventDetailScreen(
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(200.dp)
+                                .height(250.dp)
                         )
                         
                         // Event Details
@@ -212,7 +241,7 @@ fun EventDetailScreen(
                                     )
                                     
                                     Text(
-                                        text = "${eventData.startDateTime.format(dateFormatter)} - ${eventData.startDateTime.format(timeFormatter)}",
+                                        text = "${eventData.startDateTimeLocal.format(dateFormatter)} - ${eventData.startDateTimeLocal.format(timeFormatter)}",
                                         style = MaterialTheme.typography.bodyMedium
                                     )
                                 }
@@ -505,13 +534,6 @@ fun EventDetailScreen(
                             
                             // Attendance Section for Organizers
                             if (isAuthenticated && eventData.organizerId == currentUserId) {
-                                // Debug logging
-                                println("DEBUG: Showing attendance section for organizer")
-                                println("DEBUG: eventData.organizerId: ${eventData.organizerId}")
-                                println("DEBUG: currentUserId: $currentUserId")
-                                println("DEBUG: attendees count: ${attendees.size}")
-                                println("DEBUG: attendanceCount: $attendanceCount")
-                                
                                 // Organizer view - show attendance list
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
@@ -639,20 +661,8 @@ fun EventDetailScreen(
                                         }
                                     }
                                 }
-                            } else {
-                                println("DEBUG: Attendance section not shown for organizer")
                             }
-                            
-                            // Debug logging for attendance section visibility
-                            if (isAuthenticated) {
-                                println("DEBUG: User is authenticated")
-                                println("DEBUG: eventData.organizerId: ${eventData.organizerId}")
-                                println("DEBUG: currentUserId: $currentUserId")
-                                println("DEBUG: Is organizer: ${eventData.organizerId == currentUserId}")
-                            } else {
-                                println("DEBUG: User is NOT authenticated")
-                            }
-                            
+
                             // Add to Calendar Button
                             if (isAuthenticated) {
                                 Button(
@@ -771,8 +781,8 @@ private fun addEventToCalendar(
         putExtra("eventLocation", event.location)
         
         // Convert LocalDateTime to milliseconds for calendar
-        val startTime = event.startDateTime.toInstant(ZoneOffset.UTC).toEpochMilli()
-        val endTime = event.endDateTime.toInstant(ZoneOffset.UTC).toEpochMilli()
+        val startTime = event.startDateTimeLocal.toInstant(ZoneOffset.UTC).toEpochMilli()
+        val endTime = event.endDateTimeLocal.toInstant(ZoneOffset.UTC).toEpochMilli()
         
         putExtra("beginTime", startTime)
         putExtra("endTime", endTime)
@@ -805,8 +815,8 @@ private fun shareEvent(
     val shareText = buildString {
         appendLine("🎉 ${event.title}")
         appendLine()
-        appendLine("📅 Fecha: ${event.startDateTime.format(dateFormatter)}")
-        appendLine("⏰ Hora: ${event.startDateTime.format(timeFormatter)} - ${event.endDateTime.format(timeFormatter)}")
+        appendLine("📅 Fecha: ${event.startDateTimeLocal.format(dateFormatter)}")
+        appendLine("⏰ Hora: ${event.startDateTimeLocal.format(timeFormatter)} - ${event.endDateTimeLocal.format(timeFormatter)}")
         appendLine("📍 Ubicación: ${event.location}")
         appendLine("🏷️ Categoría: ${event.category}")
         appendLine("🏢 Departamento: ${event.department}")

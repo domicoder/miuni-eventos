@@ -1,20 +1,28 @@
 package com.domicoder.miunieventos.di
 
 import android.content.Context
-import com.domicoder.miunieventos.data.local.AppDatabase
-import com.domicoder.miunieventos.data.local.DatabaseInitializer
-import com.domicoder.miunieventos.data.local.EventDao
-import com.domicoder.miunieventos.data.local.RSVPDao
-import com.domicoder.miunieventos.data.local.UserDao
-import com.domicoder.miunieventos.data.local.AttendanceDao
-import com.domicoder.miunieventos.data.repository.AuthRepository
+import com.domicoder.miunieventos.data.remote.AttendanceRemoteDataSource
+import com.domicoder.miunieventos.data.remote.AuthRemoteDataSource
+import com.domicoder.miunieventos.data.remote.ConfigRemoteDataSource
+import com.domicoder.miunieventos.data.remote.EventRemoteDataSource
+import com.domicoder.miunieventos.data.remote.RSVPRemoteDataSource
+import com.domicoder.miunieventos.data.remote.UserRemoteDataSource
+import com.domicoder.miunieventos.data.repository.AttendanceRepository
+import com.domicoder.miunieventos.data.repository.AuthRepository as OldAuthRepository
+import com.domicoder.miunieventos.data.repository.AuthRepositoryImpl
+import com.domicoder.miunieventos.data.repository.ConfigRepository
 import com.domicoder.miunieventos.data.repository.EventRepository
 import com.domicoder.miunieventos.data.repository.RSVPRepository
 import com.domicoder.miunieventos.data.repository.UserRepository
+import com.domicoder.miunieventos.data.repository.FirestoreInitializer
+import com.domicoder.miunieventos.domain.repository.AuthRepository
+import com.domicoder.miunieventos.util.AuthPersistenceManager
 import com.domicoder.miunieventos.util.LoginStateManager
 import com.domicoder.miunieventos.util.UserStateManager
-import com.domicoder.miunieventos.data.repository.AttendanceRepository
-import com.domicoder.miunieventos.util.AuthPersistenceManager
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
+import com.domicoder.miunieventos.data.remote.ImageStorageDataSource
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -26,42 +34,156 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object DataModule {
     
+    // Firebase providers
     @Provides
     @Singleton
-    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
-        return AppDatabase.getDatabase(context)
+    fun provideFirebaseAuth(): FirebaseAuth {
+        return FirebaseAuth.getInstance()
     }
     
     @Provides
     @Singleton
-    fun provideEventDao(database: AppDatabase): EventDao {
-        return database.eventDao()
+    fun provideFirebaseFirestore(): FirebaseFirestore {
+        return FirebaseFirestore.getInstance()
     }
     
     @Provides
     @Singleton
-    fun provideUserDao(database: AppDatabase): UserDao {
-        return database.userDao()
+    fun provideFirebaseStorage(): FirebaseStorage {
+        return FirebaseStorage.getInstance()
+    }
+    
+    // Remote Data Sources
+    @Provides
+    @Singleton
+    fun provideAuthRemoteDataSource(
+        firebaseAuth: FirebaseAuth,
+        firestore: FirebaseFirestore
+    ): AuthRemoteDataSource {
+        return AuthRemoteDataSource(firebaseAuth, firestore)
     }
     
     @Provides
     @Singleton
-    fun provideRSVPDao(database: AppDatabase): RSVPDao {
-        return database.rsvpDao()
+    fun provideEventRemoteDataSource(
+        firestore: FirebaseFirestore
+    ): EventRemoteDataSource {
+        return EventRemoteDataSource(firestore)
     }
     
     @Provides
     @Singleton
-    fun provideAttendanceDao(database: AppDatabase): AttendanceDao {
-        return database.attendanceDao()
+    fun provideUserRemoteDataSource(
+        firestore: FirebaseFirestore
+    ): UserRemoteDataSource {
+        return UserRemoteDataSource(firestore)
     }
-    
-    @Provides @Singleton fun provideDatabaseInitializer(eventDao: EventDao, userDao: UserDao, rsvpDao: RSVPDao, attendanceDao: AttendanceDao): DatabaseInitializer { return DatabaseInitializer(eventDao, userDao, rsvpDao, attendanceDao) }
     
     @Provides
     @Singleton
-    fun provideAuthRepository(userDao: UserDao): AuthRepository {
-        return AuthRepository(userDao)
+    fun provideRSVPRemoteDataSource(
+        firestore: FirebaseFirestore
+    ): RSVPRemoteDataSource {
+        return RSVPRemoteDataSource(firestore)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideAttendanceRemoteDataSource(
+        firestore: FirebaseFirestore
+    ): AttendanceRemoteDataSource {
+        return AttendanceRemoteDataSource(firestore)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideImageStorageDataSource(
+        storage: FirebaseStorage
+    ): ImageStorageDataSource {
+        return ImageStorageDataSource(storage)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideConfigRemoteDataSource(
+        firestore: FirebaseFirestore
+    ): ConfigRemoteDataSource {
+        return ConfigRemoteDataSource(firestore)
+    }
+    
+    // Repositories
+    @Provides
+    @Singleton
+    fun provideEventRepository(
+        remoteDataSource: EventRemoteDataSource
+    ): EventRepository {
+        return EventRepository(remoteDataSource)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideUserRepository(
+        remoteDataSource: UserRemoteDataSource
+    ): UserRepository {
+        return UserRepository(remoteDataSource)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideRSVPRepository(
+        remoteDataSource: RSVPRemoteDataSource
+    ): RSVPRepository {
+        return RSVPRepository(remoteDataSource)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideAttendanceRepository(
+        remoteDataSource: AttendanceRemoteDataSource
+    ): AttendanceRepository {
+        return AttendanceRepository(remoteDataSource)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideConfigRepository(
+        remoteDataSource: ConfigRemoteDataSource
+    ): ConfigRepository {
+        return ConfigRepository(remoteDataSource)
+    }
+    
+    // Domain Repository Implementation (new architecture)
+    @Provides
+    @Singleton
+    fun provideAuthRepository(authRepositoryImpl: AuthRepositoryImpl): AuthRepository {
+        return authRepositoryImpl
+    }
+    
+    // Legacy AuthRepository (for backward compatibility)
+    @Provides
+    @Singleton
+    fun provideOldAuthRepository(
+        userRemoteDataSource: UserRemoteDataSource
+    ): OldAuthRepository {
+        return OldAuthRepository(userRemoteDataSource)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideFirestoreInitializer(
+        eventRemoteDataSource: EventRemoteDataSource,
+        userRemoteDataSource: UserRemoteDataSource,
+        rsvpRemoteDataSource: RSVPRemoteDataSource,
+        attendanceRemoteDataSource: AttendanceRemoteDataSource,
+        configRemoteDataSource: ConfigRemoteDataSource
+    ): FirestoreInitializer {
+        return FirestoreInitializer(
+            eventRemoteDataSource,
+            userRemoteDataSource,
+            rsvpRemoteDataSource,
+            attendanceRemoteDataSource,
+            configRemoteDataSource
+        )
     }
     
     @Provides
@@ -72,37 +194,21 @@ object DataModule {
     
     @Provides
     @Singleton
-    fun provideUserStateManager(userRepository: UserRepository, authPersistenceManager: AuthPersistenceManager): UserStateManager {
-        return UserStateManager(userRepository, authPersistenceManager)
+    fun provideUserStateManager(
+        userRepository: UserRepository,
+        authPersistenceManager: AuthPersistenceManager,
+        authRepository: AuthRepository
+    ): UserStateManager {
+        return UserStateManager(userRepository, authPersistenceManager, authRepository)
     }
     
     @Provides
     @Singleton
     fun provideLoginStateManager(
-        authRepository: AuthRepository,
+        authRepository: OldAuthRepository,
         userStateManager: UserStateManager,
         authPersistenceManager: AuthPersistenceManager
     ): LoginStateManager {
         return LoginStateManager(authRepository, userStateManager, authPersistenceManager)
     }
-    
-    @Provides
-    @Singleton
-    fun provideEventRepository(eventDao: EventDao): EventRepository {
-        return EventRepository(eventDao)
-    }
-    
-    @Provides
-    @Singleton
-    fun provideUserRepository(userDao: UserDao): UserRepository {
-        return UserRepository(userDao)
-    }
-    
-    @Provides
-    @Singleton
-    fun provideRSVPRepository(rsvpDao: RSVPDao): RSVPRepository {
-        return RSVPRepository(rsvpDao)
-    }
-
-    @Provides @Singleton fun provideAttendanceRepository(attendanceDao: AttendanceDao): AttendanceRepository { return AttendanceRepository(attendanceDao) }
-} 
+}

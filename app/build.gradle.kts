@@ -3,9 +3,37 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.kotlin.compose)
+}
+
+// =============================================================================
+// Configuration Validation
+// =============================================================================
+// Check for required configuration files and provide helpful error messages
+
+val googleServicesFile = file("google-services.json")
+if (!googleServicesFile.exists()) {
+    logger.warn("""
+        |
+        |╔══════════════════════════════════════════════════════════════════════════════╗
+        |║  MISSING: google-services.json                                            ║
+        |╠══════════════════════════════════════════════════════════════════════════════╣
+        |║  The app/google-services.json file is required but not found.                ║
+        |║                                                                              ║
+        |║  To fix this:                                                                ║
+        |║  1. Go to https://console.firebase.google.com/                               ║
+        |║  2. Create/select your Firebase project                                      ║
+        |║  3. Add Android app with package: com.domicoder.miunieventos                 ║
+        |║  4. Download google-services.json                                            ║
+        |║  5. Place it in the app/ directory                                           ║
+        |║                                                                              ║
+        |║  See SETUP.md for detailed instructions                                   ║
+        |╚══════════════════════════════════════════════════════════════════════════════╝
+        |
+    """.trimMargin())
 }
 
 android {
@@ -13,11 +41,12 @@ android {
     compileSdk = 34
 
     defaultConfig {
+        manifestPlaceholders += mapOf()
         applicationId = "com.domicoder.miunieventos"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
@@ -26,15 +55,51 @@ android {
         val localPropertiesFile = project.rootProject.file("local.properties")
         if (localPropertiesFile.exists()) {
             properties.load(localPropertiesFile.inputStream())
+        } else {
+            logger.warn("""
+                |
+                |╔══════════════════════════════════════════════════════════════════════════════╗
+                |║  MISSING: local.properties                                                ║
+                |╠══════════════════════════════════════════════════════════════════════════════╣
+                |║  Create local.properties from the template:                                  ║
+                |║    cp local.properties.template local.properties                             ║
+                |║                                                                              ║
+                |║  Then add your MAPS_API_KEY to enable Google Maps functionality.             ║
+                |║                                                                              ║
+                |║  See SETUP.md for detailed instructions                                   ║
+                |╚══════════════════════════════════════════════════════════════════════════════╝
+                |
+            """.trimMargin())
         }
         
-        buildConfigField("String", "MAPS_API_KEY", "\"${properties.getProperty("MAPS_API_KEY", "")}\"")
-        manifestPlaceholders["MAPS_API_KEY"] = properties.getProperty("MAPS_API_KEY", "")
+        val mapsApiKey = properties.getProperty("MAPS_API_KEY", "")
+        if (mapsApiKey.isEmpty() || mapsApiKey == "your_maps_api_key_here" || mapsApiKey == "your_actual_maps_api_key_here") {
+            logger.warn("""
+                |
+                |╔══════════════════════════════════════════════════════════════════════════════╗
+                |║  MAPS_API_KEY not configured                                              ║
+                |╠══════════════════════════════════════════════════════════════════════════════╣
+                |║  Google Maps will not work without a valid API key.                          ║
+                |║                                                                              ║
+                |║  To fix this:                                                                ║
+                |║  1. Go to https://console.cloud.google.com/apis/credentials                  ║
+                |║  2. Create an API key                                                        ║
+                |║  3. Enable "Maps SDK for Android"                                            ║
+                |║  4. Add the key to local.properties: MAPS_API_KEY=your_key_here              ║
+                |║                                                                              ║
+                |║  See SETUP.md for detailed instructions                                   ║
+                |╚══════════════════════════════════════════════════════════════════════════════╝
+                |
+            """.trimMargin())
+        }
+        
+        buildConfigField("String", "MAPS_API_KEY", "\"${mapsApiKey}\"")
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -52,13 +117,24 @@ android {
         compose = true
         buildConfig = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
-    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+    }
+    
+    tasks.register("copyGoogleServicesToAssets", Copy::class) {
+        val assetsDir = file("src/main/assets")
+        assetsDir.mkdirs()
+        from("google-services.json")
+        into(assetsDir)
+        include("google-services.json")
+        onlyIf { file("google-services.json").exists() }
+    }
+    
+    tasks.named("preBuild") {
+        dependsOn("copyGoogleServicesToAssets")
     }
 }
 
@@ -81,17 +157,15 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
     
-    // Room
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    kapt(libs.androidx.room.compiler)
-    
-    // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.messaging)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.storage)
+    
+    // Google Sign-In
+    implementation(libs.google.auth)
 
     
     // Maps
@@ -100,7 +174,7 @@ dependencies {
     
     // Hilt
     implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
     
     // DataStore
@@ -119,9 +193,4 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
-}
-
-// Allow references to generated code
-kapt {
-    correctErrorTypes = true
 }

@@ -1,46 +1,69 @@
 package com.domicoder.miunieventos.data.model
 
-import androidx.room.Entity
-import androidx.room.ForeignKey
-import androidx.room.Index
-import androidx.room.PrimaryKey
+import com.google.firebase.Timestamp
+import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.Exclude
 import java.time.LocalDateTime
+import java.time.ZoneId
 
-@Entity(
-    tableName = "rsvps",
-    foreignKeys = [
-        ForeignKey(
-            entity = Event::class,
-            parentColumns = ["id"],
-            childColumns = ["eventId"],
-            onDelete = ForeignKey.CASCADE
-        ),
-        ForeignKey(
-            entity = User::class,
-            parentColumns = ["id"],
-            childColumns = ["userId"],
-            onDelete = ForeignKey.CASCADE
-        )
-    ],
-    indices = [
-        Index(value = ["eventId"]),
-        Index(value = ["userId"]),
-        Index(value = ["eventId", "userId"], unique = true)
-    ]
-)
 data class RSVP(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
-    val eventId: String,
-    val userId: String,
-    val status: RSVPStatus,
+    @DocumentId
+    val id: String = "",
+    val eventId: String = "",
+    val userId: String = "",
+    val status: RSVPStatus = RSVPStatus.GOING,
     val checkedIn: Boolean = false,
-    val checkedInAt: LocalDateTime? = null,
-    val createdAt: LocalDateTime = LocalDateTime.now()
-)
+    var checkedInAt: Timestamp? = null,
+    var createdAt: Timestamp? = null
+) {
+    @get:Exclude
+    val checkedInAtLocal: LocalDateTime?
+        get() = checkedInAt?.toDate()?.toInstant()
+            ?.atZone(ZoneId.systemDefault())?.toLocalDateTime()
+
+    @get:Exclude
+    val createdAtLocal: LocalDateTime
+        get() = createdAt?.toDate()?.toInstant()
+            ?.atZone(ZoneId.systemDefault())?.toLocalDateTime()
+            ?: LocalDateTime.now()
+
+    companion object {
+        fun fromLocalDateTime(dateTime: LocalDateTime): Timestamp {
+            return Timestamp(
+                java.util.Date.from(
+                    dateTime.atZone(ZoneId.systemDefault()).toInstant()
+                )
+            )
+        }
+
+        fun create(
+            id: String = "",
+            eventId: String,
+            userId: String,
+            status: RSVPStatus,
+            checkedIn: Boolean = false,
+            checkedInAt: LocalDateTime? = null,
+            createdAt: LocalDateTime = LocalDateTime.now()
+        ): RSVP {
+            return RSVP(
+                id = id,
+                eventId = eventId,
+                userId = userId,
+                status = status,
+                checkedIn = checkedIn,
+                checkedInAt = checkedInAt?.let { fromLocalDateTime(it) },
+                createdAt = fromLocalDateTime(createdAt)
+            )
+        }
+
+        fun generateId(eventId: String, userId: String): String {
+            return "${eventId}_${userId}"
+        }
+    }
+}
 
 enum class RSVPStatus {
     GOING,
     MAYBE,
     NOT_GOING
-} 
+}

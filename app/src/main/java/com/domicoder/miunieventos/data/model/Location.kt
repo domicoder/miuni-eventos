@@ -1,16 +1,14 @@
 package com.domicoder.miunieventos.data.model
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
+import com.google.firebase.firestore.DocumentId
 
-@Entity(tableName = "locations")
 data class Location(
-    @PrimaryKey
-    val id: String,
-    val name: String,
-    val address: String,
-    val latitude: Double,
-    val longitude: Double,
+    @DocumentId
+    val id: String = "",
+    val name: String = "",
+    val address: String = "",
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
     val building: String? = null,
     val room: String? = null,
     val campus: String? = null
@@ -29,4 +27,4 @@ data class Location(
             building?.let { append(" ($it)") }
         }
     }
-} 
+}

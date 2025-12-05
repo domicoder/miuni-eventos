@@ -14,6 +14,7 @@ import java.time.LocalDateTime
 import javax.inject.Inject
 import com.domicoder.miunieventos.data.repository.AttendanceRepository
 import com.domicoder.miunieventos.data.model.RSVPStatus
+import java.time.format.DateTimeFormatter
 
 @HiltViewModel
 class ScannerViewModel @Inject constructor(
@@ -65,34 +66,32 @@ class ScannerViewModel @Inject constructor(
                     return@launch
                 }
                 
-                // Debug logging
-                println("DEBUG: Found RSVP for user $userId in event $eventId with status: ${rsvp.status}")
-                
                 // Check if user is actually going to the event
                 if (rsvp.status != RSVPStatus.GOING) {
                     _scanResult.value = ScanResult.Error("Este usuario no confirmó que asistiría al evento. Estado: ${when(rsvp.status) { RSVPStatus.MAYBE -> "Tal vez" else -> "No asistiré" }}")
                     return@launch
                 }
                 
-                println("DEBUG: User $userId has RSVP status GOING, checking attendance...")
-                
                 // Check if already checked in (using attendance table, not RSVP)
                 val existingAttendance = attendanceRepository.checkIfUserAttended(eventId, userId)
-                println("DEBUG: Existing attendance check result: $existingAttendance")
-                
+
                 if (existingAttendance) {
                     _scanResult.value = ScanResult.Error("El usuario ya fue registrado en este evento")
                     return@launch
                 }
-                
-                // Debug logging
-                println("DEBUG: User $userId not found in attendance for event $eventId")
-                println("DEBUG: Proceeding to record attendance...")
-                
-                // Check if event is currently happening (optional validation)
+
                 val now = LocalDateTime.now()
-                if (now.isBefore(event.startDateTime) || now.isAfter(event.endDateTime)) {
-                    _scanResult.value = ScanResult.Error("El evento no está en curso. Horario: ${event.startDateTime} - ${event.endDateTime}")
+
+                if (now.isAfter(event.endDateTimeLocal)) {
+                    _scanResult.value = ScanResult.Error("El evento ya ha finalizado.")
+                    return@launch
+                }
+
+                if (now.isBefore(event.startDateTimeLocal)) {
+                    _scanResult.value = ScanResult.Error(
+                        "El evento no está en curso.\nHorario: ${event.startDateTimeLocal.format(
+                            DateTimeFormatter.ofPattern("eeee d, yyyy. HH:mm"))} - ${event.endDateTimeLocal.format(DateTimeFormatter.ofPattern("HH:mm"))}" // Or just the date if on different days
+                    )
                     return@launch
                 }
                 

@@ -1,8 +1,10 @@
 package com.domicoder.miunieventos.util
 
 import android.util.Log
+import com.domicoder.miunieventos.data.mapper.UserMapper
 import com.domicoder.miunieventos.data.model.User
 import com.domicoder.miunieventos.data.repository.UserRepository
+import com.domicoder.miunieventos.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,7 +15,8 @@ import javax.inject.Singleton
 @Singleton
 class UserStateManager @Inject constructor(
     private val userRepository: UserRepository,
-    private val authPersistenceManager: AuthPersistenceManager
+    private val authPersistenceManager: AuthPersistenceManager,
+    private val authRepository: AuthRepository
 ) {
     
     companion object {
@@ -35,13 +38,32 @@ class UserStateManager @Inject constructor(
     suspend fun setCurrentUserId(userId: String, rememberMe: Boolean = true) {
         try {
             if (userId.isNotEmpty()) {
-                val user = userRepository.getUserById(userId)
+                var user = userRepository.getUserById(userId)
+                
+                if (user == null) {
+                    Log.d(TAG, "User not found in Firestore for ID: $userId, attempting to sync from Firebase Auth")
+                    val domainUser = authRepository.getCurrentUser()
+                    if (domainUser != null && domainUser.id == userId) {
+                        Log.d(TAG, "Found user in Firebase Auth, syncing to Firestore")
+                        user = UserMapper.domainToData(domainUser)
+                        val result = userRepository.insertUser(user)
+                        if (result.isSuccess) {
+                            Log.d(TAG, "User synced to Firestore: ${user.name} (${user.id})")
+                        } else {
+                            Log.e(TAG, "Failed to sync user to Firestore: ${result.exceptionOrNull()?.message}")
+                        }
+                    } else {
+                        Log.w(TAG, "User not found in Firebase Auth either for ID: $userId")
+                    }
+                }
+                
                 if (user != null) {
+                    Log.d(TAG, "Setting user state - id: ${user.id}, name: ${user.name}, isOrganizer: ${user.isOrganizer}")
                     _currentUser.value = user
                     _isAuthenticated.value = true
                     _isOrganizer.value = user.isOrganizer
+                    Log.d(TAG, "isOrganizer state set to: ${_isOrganizer.value}")
                     
-                    // Persist authentication data
                     authPersistenceManager.saveAuthData(
                         userId = user.id,
                         email = user.email,
@@ -51,9 +73,9 @@ class UserStateManager @Inject constructor(
                         rememberMe = rememberMe
                     )
                     
-                    Log.d(TAG, "User set successfully: ${user.name} (${user.id}), rememberMe: $rememberMe")
+                    Log.d(TAG, "User set successfully: ${user.name} (${user.id}), isOrganizer: ${user.isOrganizer}, rememberMe: $rememberMe")
                 } else {
-                    Log.w(TAG, "User not found for ID: $userId")
+                    Log.w(TAG, "User not found for ID: $userId after sync attempt")
                     _currentUser.value = null
                     _isAuthenticated.value = false
                     _isOrganizer.value = false
@@ -145,15 +167,17 @@ class UserStateManager @Inject constructor(
             if (authPersistenceManager.isStoredAuthValid()) {
                 val storedUserId = authPersistenceManager.getStoredUserId()
                 if (!storedUserId.isNullOrEmpty()) {
-                    // Verify the user still exists in the database
+                    // Verify the user still exists in Firestore
                     val user = userRepository.getUserById(storedUserId)
                     if (user != null) {
                         // Restore the authentication state
+                        Log.d(TAG, "Restoring auth - user found: ${user.name}, isOrganizer: ${user.isOrganizer}")
                         _currentUser.value = user
                         _isAuthenticated.value = true
                         _isOrganizer.value = user.isOrganizer
+                        Log.d(TAG, "isOrganizer state restored to: ${_isOrganizer.value}")
                         
-                        Log.d(TAG, "Authentication state restored successfully for user: ${user.name}")
+                        Log.d(TAG, "Authentication state restored successfully for user: ${user.name}, isOrganizer: ${user.isOrganizer}")
                         return true
                     } else {
                         // User no longer exists, clear stored data
@@ -193,13 +217,18 @@ class UserStateManager @Inject constructor(
                 val updatedUser = currentUser.copy(
                     name = name ?: currentUser.name,
                     department = department ?: currentUser.department,
-                    isOrganizer = isOrganizer ?: currentUser.isOrganizer
+                    organizer = isOrganizer ?: currentUser.isOrganizer
                 )
                 _currentUser.value = updatedUser
                 _isOrganizer.value = updatedUser.isOrganizer
                 
-                // Update the repository
-                userRepository.updateUser(updatedUser)
+                // Update the repository (Firestore)
+                val result = userRepository.updateUser(updatedUser)
+                if (result.isSuccess) {
+                    Log.d(TAG, "User profile updated in Firestore successfully")
+                } else {
+                    Log.e(TAG, "Failed to update user in Firestore: ${result.exceptionOrNull()?.message}")
+                }
                 
                 // Update persistent data
                 authPersistenceManager.updateUserInfo(
@@ -215,9 +244,6 @@ class UserStateManager @Inject constructor(
         }
     }
     
-    /**
-     * Checks if the current user is the same as the stored user
-     */
     suspend fun isCurrentUserStored(): Boolean {
         return try {
             val storedUserId = authPersistenceManager.getStoredUserId()

@@ -1,5 +1,8 @@
 package com.domicoder.miunieventos.ui.profile
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -27,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -40,6 +45,7 @@ import coil.request.ImageRequest
 import com.domicoder.miunieventos.R
 import com.domicoder.miunieventos.ui.navigation.NavRoutes
 import com.domicoder.miunieventos.ui.components.LoginPromptScreen
+import com.domicoder.miunieventos.ui.theme.BackgroundContrastColor
 
 @Composable
 fun ProfileScreen(
@@ -59,6 +65,9 @@ fun ProfileScreen(
         LoginPromptScreen(
             onLoginRequest = {
                 navController.navigate(NavRoutes.Login.route)
+            },
+            onRegisterRequest = {
+                navController.navigate(NavRoutes.Register.route)
             }
         )
         return
@@ -111,24 +120,44 @@ fun ProfileScreen(
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
-                // User Photo
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(userData.photoUrl)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = "Profile Photo",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(120.dp)
-                        .clip(CircleShape)
-                )
+
+                // User Photo or Avatar
+                if (!userData.photoUrl.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(userData.photoUrl)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "Profile Photo",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(CircleShape)
+                    )
+                } else {
+                    // Placeholder Avatar
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(CircleShape)
+                            .background(BackgroundContrastColor)
+                            .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Avatar",
+                            modifier = Modifier.size(80.dp),
+                            tint = MaterialTheme.colorScheme.background
+                        )
+                    }
+                }
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 // User Name
                 Text(
-                    text = userData.name,
+                    text = userData.name.uppercase(),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold
                 )

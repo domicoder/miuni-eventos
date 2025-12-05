@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>MiUNI Eventos - Detalles del Evento</title>
+        <meta
+            name="description"
+            content="Descubre eventos increíbles en MiUNI. Descarga la app para confirmar asistencia y más detalles."
+        />
+
+        <!-- Open Graph Meta Tags for Social Sharing -->
+        <meta property="og:title" content="MiUNI Eventos" />
+        <meta
+            property="og:description"
+            content="Descubre eventos increíbles en MiUNI. Descarga la app para confirmar asistencia y más detalles."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://miunieventos.web.app" />
+        <meta
+            property="og:image"
+            content="https://miunieventos.web.app/images/event-preview.jpg"
+        />
+
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                    Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+            }
+
+            .container {
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+
+            .event-card {
+                background: white;
+                border-radius: 16px;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+                overflow: hidden;
+                margin-top: 40px;
+            }
+
+            .event-header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 40px 30px;
+                text-align: center;
+            }
+
+            .event-header h1 {
+                font-size: 2.5rem;
+                margin-bottom: 10px;
+                font-weight: 700;
+            }
+
+            .event-header .subtitle {
+                font-size: 1.2rem;
+                opacity: 0.9;
+                margin-bottom: 15px;
+            }
+
+            .event-content {
+                padding: 40px 30px;
+            }
+
+            .event-info {
+                margin-bottom: 30px;
+            }
+
+            .info-item {
+                display: flex;
+                align-items: center;
+                margin-bottom: 20px;
+                padding: 15px;
+                background: #f8f9fa;
+                border-radius: 10px;
+            }
+
+            .info-icon {
+                font-size: 1.5rem;
+                margin-right: 15px;
+                width: 30px;
+                text-align: center;
+            }
+
+            .info-text {
+                flex: 1;
+            }
+
+            .info-label {
+                font-weight: 600;
+                color: #666;
+                font-size: 0.9rem;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .info-value {
+                font-size: 1.1rem;
+                color: #333;
+                margin-top: 2px;
+            }
+
+            .download-section {
+                text-align: center;
+                padding: 30px;
+                background: #f8f9fa;
+                border-radius: 10px;
+                margin-top: 30px;
+            }
+
+            .download-title {
+                font-size: 1.5rem;
+                margin-bottom: 15px;
+                color: #333;
+            }
+
+            .download-description {
+                color: #666;
+                margin-bottom: 25px;
+                line-height: 1.6;
+            }
+
+            .download-btn {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 16px 32px;
+                border: none;
+                border-radius: 50px;
+                font-size: 1.1rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            }
+
+            .download-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+            }
+
+            .footer {
+                text-align: center;
+                margin-top: 40px;
+                color: white;
+                opacity: 0.8;
+            }
+
+            .footer a {
+                color: white;
+                text-decoration: none;
+            }
+
+            @media (max-width: 768px) {
+                .container {
+                    padding: 15px;
+                }
+
+                .event-header h1 {
+                    font-size: 2rem;
+                }
+
+                .event-content {
+                    padding: 30px 20px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="event-card">
+                <div class="event-header">
+                    <h1>🎉 MiUNI Eventos</h1>
+                    <div class="subtitle">
+                        Descubre eventos increíbles en tu universidad
+                    </div>
+                </div>
+
+                <div class="event-content">
+                    <div class="event-info">
+                        <div class="info-item">
+                            <div class="info-icon">📅</div>
+                            <div class="info-text">
+                                <div class="info-label">Fecha</div>
+                                <div class="info-value">Evento próximo</div>
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-icon">📍</div>
+                            <div class="info-text">
+                                <div class="info-label">Ubicación</div>
+                                <div class="info-value">
+                                    Universidad Domínico Americano
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-icon">🏷️</div>
+                            <div class="info-text">
+                                <div class="info-label">Categoría</div>
+                                <div class="info-value">
+                                    Evento Universitario
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="download-section">
+                        <div class="download-title">📱 Prueba la App</div>
+                        <div class="download-description">
+                            Para ver más detalles del evento, confirmar
+                            asistencia, añadir al calendario y acceder a todas
+                            las funciones, prueba nuestra aplicación en
+                            desarrollo.
+                        </div>
+                        <button class="download-btn" onclick="downloadApp()">
+                            Ver el Evento
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p>
+                    © 2025 MiUNI Eventos. Desarrollado con ❤️ para la comunidad
+                    universitaria.
+                </p>
+                <p style="margin-top: 10px; font-size: 0.8rem; opacity: 0.7">
+                    Universidad Domínico Americano
+                </p>
+            </div>
+        </div>
+
+        <script>
+            // Function to handle app download
+            function downloadApp() {
+                // Check if we're on Android
+                if (/Android/i.test(navigator.userAgent)) {
+                    // Get the event ID from the URL
+                    const eventId = getEventId();
+
+                    // Try to open the app first using custom scheme with event ID
+                    const appUrl = `miunieventos://event?id=${eventId}`;
+
+                    // Try to open the app
+                    window.location.href = appUrl;
+
+                    // Show MVP message after a delay
+                    setTimeout(() => {
+                        showMVPMessage();
+                    }, 1000);
+                } else {
+                    // On other platforms, show a message
+                    showMVPMessage();
+                }
+            }
+
+            // Show MVP message
+            function showMVPMessage() {
+                const message = `
+                     🚀 MiUNI Eventos - MVP en Desarrollo
+                     
+                     Para probar la aplicación:
+                     1. Instala el APK de desarrollo
+                     2. O ejecuta desde Android Studio
+                     3. O contacta al equipo de desarrollo
+                     
+                     ¡Gracias por tu interés en nuestro proyecto MVP!
+                 `;
+                alert(message);
+            }
+
+            // Extract event ID from URL if present
+            function getEventId() {
+                // Extract from URL path: /event/{eventId}
+                const pathParts = window.location.pathname.split('/');
+                const eventId = pathParts[pathParts.length - 1];
+
+                // If no event ID in path, try query parameters as fallback
+                if (!eventId || eventId === 'event') {
+                    const urlParams = new URLSearchParams(
+                        window.location.search
+                    );
+                    return urlParams.get('id') || 'default';
+                }
+
+                return eventId;
+            }
+
+            // Update page content based on event ID
+            function updateEventContent() {
+                const eventId = getEventId();
+                console.log('Event ID:', eventId);
+
+                // You can customize this based on the event ID
+                // For now, we'll show generic content
+            }
+
+            // Initialize page
+            document.addEventListener('DOMContentLoaded', function () {
+                updateEventContent();
+            });
+        </script>
+    </body>
+</html>

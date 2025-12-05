@@ -70,7 +70,7 @@ fun EventCard(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp)
+                    .height(210.dp)
                     .clip(MaterialTheme.shapes.medium)
             )
             
@@ -99,7 +99,7 @@ fun EventCard(
                 Spacer(modifier = Modifier.width(4.dp))
                 
                 Text(
-                    text = "${event.startDateTime.format(dateFormatter)} - ${event.startDateTime.format(timeFormatter)}",
+                    text = "${event.startDateTimeLocal.format(dateFormatter)} - ${event.startDateTimeLocal.format(timeFormatter)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

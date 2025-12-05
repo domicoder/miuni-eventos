@@ -61,7 +61,7 @@ captures/
 .cxx/
 
 # Google Services (e.g. APIs or Firebase)
-# google-services.json
+google-services.json
 
 # Freeline
 freeline.py
@@ -298,7 +298,6 @@ dist
 
 # Gatsby files
 .cache/
-public
 
 # Storybook build outputs
 .out
@@ -326,3 +325,5 @@ temp/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+functions/node_modules/

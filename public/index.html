@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>MiUNI Eventos - Descubre Eventos Increíbles</title>
+        <meta
+            name="description"
+            content="Descubre eventos increíbles en la Universidad Domínico Americano. Descarga la app para confirmar asistencia y más detalles."
+        />
+
+        <!-- Open Graph Meta Tags for Social Sharing -->
+        <meta property="og:title" content="MiUNI Eventos" />
+        <meta
+            property="og:description"
+            content="Descubre eventos increíbles en la Universidad Domínico Americano. Descarga la app para confirmar asistencia y más detalles."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://miuni-eventos.web.app" />
+        <meta
+            property="og:image"
+            content="https://miuni-eventos.web.app/images/event-preview.png"
+        />
+
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                    Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+            }
+
+            .container {
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+
+            .hero-section {
+                text-align: center;
+                color: white;
+                margin: 60px 0;
+            }
+
+            .hero-title {
+                font-size: 3.5rem;
+                margin-bottom: 20px;
+                font-weight: 700;
+            }
+
+            .hero-subtitle {
+                font-size: 1.4rem;
+                opacity: 0.9;
+                margin-bottom: 30px;
+            }
+
+            .hero-description {
+                font-size: 1.1rem;
+                opacity: 0.8;
+                max-width: 600px;
+                margin: 0 auto;
+            }
+
+            .main-card {
+                background: white;
+                border-radius: 16px;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+                overflow: hidden;
+                margin-bottom: 40px;
+            }
+
+            .card-header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 40px 30px;
+                text-align: center;
+            }
+
+            .card-title {
+                font-size: 2rem;
+                margin-bottom: 15px;
+                font-weight: 700;
+            }
+
+            .card-subtitle {
+                font-size: 1.2rem;
+                opacity: 0.9;
+            }
+
+            .card-content {
+                padding: 40px 30px;
+            }
+
+            .features-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 30px;
+                margin: 40px 0;
+            }
+
+            .feature-item {
+                text-align: center;
+                padding: 30px 20px;
+                background: #f8f9fa;
+                border-radius: 12px;
+                transition: transform 0.3s ease;
+            }
+
+            .feature-item:hover {
+                transform: translateY(-5px);
+            }
+
+            .feature-icon {
+                font-size: 3rem;
+                margin-bottom: 20px;
+            }
+
+            .feature-title {
+                font-size: 1.3rem;
+                font-weight: 600;
+                margin-bottom: 15px;
+                color: #333;
+            }
+
+            .feature-description {
+                color: #666;
+                line-height: 1.6;
+            }
+
+            .download-section {
+                text-align: center;
+                padding: 40px;
+                background: #f8f9fa;
+                border-radius: 12px;
+                margin: 30px 0;
+            }
+
+            .download-title {
+                font-size: 1.8rem;
+                margin-bottom: 20px;
+                color: #333;
+            }
+
+            .download-description {
+                color: #666;
+                margin-bottom: 30px;
+                line-height: 1.6;
+                max-width: 500px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .download-btn {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 18px 36px;
+                border: none;
+                border-radius: 50px;
+                font-size: 1.2rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            }
+
+            .download-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+            }
+
+            .footer {
+                text-align: center;
+                margin-top: 60px;
+                color: white;
+                opacity: 0.8;
+            }
+
+            .footer a {
+                color: white;
+                text-decoration: none;
+            }
+
+            @media (max-width: 768px) {
+                .container {
+                    padding: 15px;
+                }
+
+                .hero-title {
+                    font-size: 2.5rem;
+                }
+
+                .card-content {
+                    padding: 30px 20px;
+                }
+
+                .features-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="hero-section">
+                <h1 class="hero-title">🎉 MiUNI Eventos</h1>
+                <div class="hero-subtitle">
+                    Descubre eventos increíbles en tu universidad
+                </div>
+                <div class="hero-description">
+                    La plataforma oficial de eventos de la Universidad Domínico
+                    Americano. Explora, descubre y participa en los mejores
+                    eventos universitarios.
+                </div>
+            </div>
+
+            <div class="main-card">
+                <div class="card-header">
+                    <h2 class="card-title">🚀 ¿Qué puedes hacer?</h2>
+                    <div class="card-subtitle">
+                        Descubre todas las funcionalidades de MiUNI Eventos
+                    </div>
+                </div>
+
+                <div class="card-content">
+                    <div class="features-grid">
+                        <div class="feature-item">
+                            <div class="feature-icon">📅</div>
+                            <div class="feature-title">Explorar Eventos</div>
+                            <div class="feature-description">
+                                Descubre eventos por categoría, fecha y
+                                ubicación
+                            </div>
+                        </div>
+
+                        <div class="feature-item">
+                            <div class="feature-icon">✅</div>
+                            <div class="feature-title">
+                                Confirmar Asistencia
+                            </div>
+                            <div class="feature-description">
+                                RSVP a eventos y mantén un registro de tu
+                                participación
+                            </div>
+                        </div>
+
+                        <div class="feature-item">
+                            <div class="feature-icon">📱</div>
+                            <div class="feature-title">Escaneo QR</div>
+                            <div class="feature-description">
+                                Verifica tu asistencia escaneando códigos QR en
+                                eventos
+                            </div>
+                        </div>
+
+                        <div class="feature-item">
+                            <div class="feature-icon">🗺️</div>
+                            <div class="feature-title">Mapas Interactivos</div>
+                            <div class="feature-description">
+                                Encuentra fácilmente la ubicación de cada evento
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="download-section">
+                        <div class="download-title">📱 Prueba la App</div>
+                        <div class="download-description">
+                            Para acceder a todas las funcionalidades, confirmar
+                            asistencia, añadir eventos al calendario y disfrutar
+                            de la experiencia completa, prueba nuestra
+                            aplicación en desarrollo.
+                        </div>
+                        <button class="download-btn" onclick="downloadApp()">
+                            Probar MiUNI Eventos
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p>
+                    © 2025 MiUNI Eventos. Desarrollado con ❤️ para la comunidad
+                    universitaria.
+                </p>
+                <p style="margin-top: 10px; font-size: 0.8rem; opacity: 0.7">
+                    Universidad Domínico Americano
+                </p>
+            </div>
+        </div>
+
+        <script>
+            // Function to handle app download
+            function downloadApp() {
+                // Check if we're on Android
+                if (/Android/i.test(navigator.userAgent)) {
+                    // Try to open the app first using custom scheme
+                    const appUrl = 'miunieventos://event';
+
+                    // Try to open the app
+                    window.location.href = appUrl;
+
+                    // Show MVP message after a delay
+                    setTimeout(() => {
+                        showMVPMessage();
+                    }, 1000);
+                } else {
+                    // On other platforms, show a message
+                    showMVPMessage();
+                }
+            }
+
+            // Show MVP message
+            function showMVPMessage() {
+                const message = `
+                     🚀 MiUNI Eventos - MVP en Desarrollo
+                     
+                     Para probar la aplicación:
+                     1. Instala el APK de desarrollo
+                     2. O ejecuta desde Android Studio
+                     3. O contacta al equipo de desarrollo
+                     
+                     ¡Gracias por tu interés en nuestro proyecto MVP!
+                 `;
+                alert(message);
+            }
+
+            // Handle routing for event pages
+            function handleRouting() {
+                const path = window.location.pathname;
+
+                // If it's an event URL, redirect to event.html
+                if (path.startsWith('/event/')) {
+                    window.location.href =
+                        '/event.html' + window.location.search;
+                }
+            }
+
+            // Initialize routing
+            document.addEventListener('DOMContentLoaded', function () {
+                handleRouting();
+            });
+        </script>
+    </body>
+</html>

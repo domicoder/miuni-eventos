@@ -22,6 +22,7 @@ import com.domicoder.miunieventos.ui.components.LoginPromptScreen
 import com.domicoder.miunieventos.ui.discover.DiscoverScreen
 import com.domicoder.miunieventos.ui.eventdetail.EventDetailScreen
 import com.domicoder.miunieventos.ui.login.LoginScreen
+import com.domicoder.miunieventos.ui.register.RegisterScreen
 import com.domicoder.miunieventos.ui.maps.MapsScreen
 import com.domicoder.miunieventos.ui.myevents.MyEventsScreen
 import com.domicoder.miunieventos.ui.profile.ProfileScreen
@@ -33,9 +34,12 @@ import com.domicoder.miunieventos.util.UserStateManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.runtime.rememberCoroutineScope
 import com.domicoder.miunieventos.ui.organizedevents.OrganizedEventsScreen
 import com.domicoder.miunieventos.ui.eventedit.EditEventScreen
+import com.domicoder.miunieventos.ui.createevent.CreateEventScreen
 
 @Composable
 fun AppNavigation(
@@ -52,11 +56,25 @@ fun AppNavigation(
     // Deep link handling
     val deepLinkEvent by DeepLinkManager.deepLinkEvent.collectAsState()
     
-    // Handle deep link navigation
-    LaunchedEffect(deepLinkEvent) {
-        deepLinkEvent?.let { eventId ->
+    // Track if NavHost is ready for navigation
+    var isNavHostReady by remember { mutableStateOf(false) }
+    
+    // Mark NavHost as ready after first composition
+    LaunchedEffect(Unit) {
+        isNavHostReady = true
+    }
+    
+    // Handle deep link navigation - wait for NavHost to be ready
+    LaunchedEffect(deepLinkEvent, isNavHostReady) {
+        if (isNavHostReady && deepLinkEvent != null) {
+            val eventId = deepLinkEvent!!
             Log.d("AppNavigation", "Deep link received, navigating to event: $eventId")
-            navController.navigate(NavRoutes.EventDetail.createRoute(eventId))
+            // Small delay to ensure NavHost is fully initialized
+            kotlinx.coroutines.delay(100)
+            navController.navigate(NavRoutes.EventDetail.createRoute(eventId)) {
+                // Pop back to Discover to avoid stacking multiple Discover screens
+                popUpTo(NavRoutes.Discover.route) { inclusive = false }
+            }
             DeepLinkManager.clearDeepLinkEvent()
         }
     }
@@ -72,14 +90,20 @@ fun AppNavigation(
     }
     
     // Handle login success
-    val onLoginSuccess = { userId: String, rememberMe: Boolean ->
-        // Set the current user in UserStateManager to persist the login state
-        // This will trigger the authentication state update
+    val onLoginSuccess: (String, Boolean) -> Unit = { userId, rememberMe ->
+        Log.d("AppNavigation", "onLoginSuccess called with userId: $userId, rememberMe: $rememberMe")
         coroutineScope.launch {
-            userStateManager.setCurrentUserId(userId, rememberMe)
-        }
-        navController.navigate(NavRoutes.Discover.route) {
-            popUpTo(NavRoutes.Login.route) { inclusive = true }
+            try {
+                userStateManager.setCurrentUserId(userId, rememberMe)
+                Log.d("AppNavigation", "User set successfully, navigating to Discover")
+                withContext(Dispatchers.Main) {
+                    navController.navigate(NavRoutes.Discover.route) {
+                        popUpTo(NavRoutes.Login.route) { inclusive = true }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("AppNavigation", "Error setting user after login", e)
+            }
         }
     }
     
@@ -127,6 +151,9 @@ fun AppNavigation(
                     LoginPromptScreen(
                         onLoginRequest = {
                             navController.navigate(NavRoutes.Login.route)
+                        },
+                        onRegisterRequest = {
+                            navController.navigate(NavRoutes.Register.route)
                         }
                     )
                 }
@@ -140,6 +167,9 @@ fun AppNavigation(
                     LoginPromptScreen(
                         onLoginRequest = {
                             navController.navigate(NavRoutes.Login.route)
+                        },
+                        onRegisterRequest = {
+                            navController.navigate(NavRoutes.Register.route)
                         }
                     )
                 }
@@ -160,6 +190,9 @@ fun AppNavigation(
                     LoginPromptScreen(
                         onLoginRequest = {
                             navController.navigate(NavRoutes.Login.route)
+                        },
+                        onRegisterRequest = {
+                            navController.navigate(NavRoutes.Register.route)
                         }
                     )
                 }
@@ -190,13 +223,41 @@ fun AppNavigation(
             ) { backStackEntry ->
                 val eventId = backStackEntry.arguments?.getString("eventId") ?: ""
                 EditEventScreen(
-                    navController = navController
+                    navController = navController,
+                    currentUserId = currentUser?.id ?: ""
+                )
+            }
+            
+            composable(
+                route = NavRoutes.CreateEvent.route,
+                arguments = listOf(
+                    navArgument("organizerId") {
+                        type = NavType.StringType
+                    }
+                )
+            ) { backStackEntry ->
+                val organizerId = backStackEntry.arguments?.getString("organizerId") ?: ""
+                CreateEventScreen(
+                    navController = navController,
+                    organizerId = organizerId
                 )
             }
             
             composable(NavRoutes.Login.route) {
                 LoginScreen(
-                    onLoginSuccess = onLoginSuccess
+                    onLoginSuccess = onLoginSuccess,
+                    onRegisterRequest = {
+                        navController.navigate(NavRoutes.Register.route)
+                    }
+                )
+            }
+            
+            composable(NavRoutes.Register.route) {
+                RegisterScreen(
+                    onRegisterSuccess = onLoginSuccess,
+                    onLoginRequest = {
+                        navController.navigate(NavRoutes.Login.route)
+                    }
                 )
             }
             
@@ -210,6 +271,9 @@ fun AppNavigation(
                     LoginPromptScreen(
                         onLoginRequest = {
                             navController.navigate(NavRoutes.Login.route)
+                        },
+                        onRegisterRequest = {
+                            navController.navigate(NavRoutes.Register.route)
                         }
                     )
                 }

@@ -1,5 +1,6 @@
 package com.domicoder.miunieventos.ui.eventdetail
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,7 +11,7 @@ import com.domicoder.miunieventos.data.repository.EventRepository
 import com.domicoder.miunieventos.data.repository.RSVPRepository
 import com.domicoder.miunieventos.data.repository.UserRepository
 import com.domicoder.miunieventos.data.repository.AttendanceRepository
-import com.domicoder.miunieventos.data.local.AttendeeWithDetails
+import com.domicoder.miunieventos.data.remote.AttendeeWithDetails
 import com.domicoder.miunieventos.util.RSVPStateManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +22,16 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import javax.inject.Inject
+
+/**
+ * Represents the access status for an event
+ */
+enum class EventAccessStatus {
+    LOADING,           // Still checking access
+    ALLOWED,           // User can access the event
+    DENIED_PAST,       // Event has ended and user didn't attend
+    DENIED_IN_PROGRESS // Event is in progress and user didn't RSVP
+}
 
 @HiltViewModel
 class EventDetailViewModel @Inject constructor(
@@ -58,6 +69,17 @@ class EventDetailViewModel @Inject constructor(
     
     private val _attendanceCount = MutableStateFlow(0)
     val attendanceCount: StateFlow<Int> = _attendanceCount
+
+    // Access control
+    private val _accessStatus = MutableStateFlow(EventAccessStatus.LOADING)
+    val accessStatus: StateFlow<EventAccessStatus> = _accessStatus
+
+    private val _userHasAttended = MutableStateFlow(false)
+    val userHasAttended: StateFlow<Boolean> = _userHasAttended
+
+    companion object {
+        private const val TAG = "EventDetailViewModel"
+    }
     
     init {
         loadEvent()
@@ -66,6 +88,7 @@ class EventDetailViewModel @Inject constructor(
     fun loadEvent(eventId: String = this.eventId) {
         viewModelScope.launch {
             _isLoading.value = true
+            _accessStatus.value = EventAccessStatus.LOADING
             try {
                 val event = eventRepository.getEventById(eventId)
                 _event.value = event
@@ -79,25 +102,134 @@ class EventDetailViewModel @Inject constructor(
                     val rsvp = rsvpRepository.getRSVPByEventAndUser(eventId, _currentUserId.value)
                     _userRSVP.value = rsvp
                     
-                    // Load attendance data for organizers
-                    val attendees = attendanceRepository.getAttendeesWithDetails(eventId).first()
+                    // Load attendance data for organizers (using suspend function for full details)
+                    val attendees = attendanceRepository.getFullAttendeesWithDetails(eventId)
                     _attendees.value = attendees
                     
                     val attendanceCount = attendanceRepository.getAttendanceCountByEvent(eventId)
                     _attendanceCount.value = attendanceCount
+
+                    // Check if user has attended this event
+                    val hasAttended = if (_currentUserId.value.isNotEmpty()) {
+                        attendanceRepository.checkIfUserAttended(eventId, _currentUserId.value)
+                    } else {
+                        false
+                    }
+                    _userHasAttended.value = hasAttended
+
+                    // Check access based on event status
+                    val accessStatus = checkEventAccess(
+                        event = event,
+                        userId = _currentUserId.value,
+                        rsvp = rsvp,
+                        hasAttended = hasAttended,
+                        isOrganizer = event.organizerId == _currentUserId.value
+                    )
+                    _accessStatus.value = accessStatus
+                    Log.d(TAG, "Access status for event $eventId: $accessStatus (userId: ${_currentUserId.value})")
                     
                     // Initialize RSVPStateManager with current user's RSVPs
                     if (_currentUserId.value.isNotEmpty()) {
                         val userRSVPs = rsvpRepository.getRSVPsByUserId(_currentUserId.value).first()
                         RSVPStateManager.initializeFromDatabase(userRSVPs)
                     }
+                } else {
+                    _accessStatus.value = EventAccessStatus.DENIED_PAST // Event not found
                 }
                 
                 _error.value = null
             } catch (e: Exception) {
                 _error.value = e.message
+                _accessStatus.value = EventAccessStatus.ALLOWED // On error, allow access to show error
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    /**
+     * Determines if the user can access this event based on:
+     * - Event hasn't started yet: Anyone can access
+     * - Event is in progress: Only users with RSVP (GOING/MAYBE) or organizer can access
+     * - Event ended within 24 hours: Users with RSVP GOING can still access
+     * - Event ended more than 24 hours ago: Only users who attended or organizer can access
+     */
+    private fun checkEventAccess(
+        event: Event,
+        userId: String,
+        rsvp: RSVP?,
+        hasAttended: Boolean,
+        isOrganizer: Boolean
+    ): EventAccessStatus {
+        val now = LocalDateTime.now()
+        val startTime = event.startDateTimeLocal
+        val endTime = event.endDateTimeLocal
+        val oneDayAfterEnd = endTime.plusDays(1)
+
+        Log.d(TAG, "Checking access - now: $now, start: $startTime, end: $endTime, oneDayAfter: $oneDayAfterEnd")
+        Log.d(TAG, "User info - userId: $userId, hasRSVP: ${rsvp != null}, rsvpStatus: ${rsvp?.status}, hasAttended: $hasAttended, isOrganizer: $isOrganizer")
+
+        // Organizer always has access
+        if (isOrganizer) {
+            Log.d(TAG, "Access ALLOWED: User is organizer")
+            return EventAccessStatus.ALLOWED
+        }
+
+        // If user is not authenticated, only allow access to upcoming events
+        if (userId.isEmpty()) {
+            return if (now.isBefore(startTime)) {
+                Log.d(TAG, "Access ALLOWED: Unauthenticated user, event hasn't started")
+                EventAccessStatus.ALLOWED
+            } else if (now.isBefore(endTime)) {
+                Log.d(TAG, "Access DENIED: Unauthenticated user, event in progress")
+                EventAccessStatus.DENIED_IN_PROGRESS
+            } else {
+                Log.d(TAG, "Access DENIED: Unauthenticated user, event has ended")
+                EventAccessStatus.DENIED_PAST
+            }
+        }
+
+        val hasGoingRsvp = rsvp != null && rsvp.status == RSVPStatus.GOING
+        val hasValidRsvp = rsvp != null && (rsvp.status == RSVPStatus.GOING || rsvp.status == RSVPStatus.MAYBE)
+
+        return when {
+            // Event hasn't started yet - anyone can access
+            now.isBefore(startTime) -> {
+                Log.d(TAG, "Access ALLOWED: Event hasn't started yet")
+                EventAccessStatus.ALLOWED
+            }
+            
+            // Event is in progress - only users with RSVP can access
+            now.isBefore(endTime) -> {
+                if (hasValidRsvp || hasAttended) {
+                    Log.d(TAG, "Access ALLOWED: Event in progress, user has RSVP or attended")
+                    EventAccessStatus.ALLOWED
+                } else {
+                    Log.d(TAG, "Access DENIED: Event in progress, user has no RSVP")
+                    EventAccessStatus.DENIED_IN_PROGRESS
+                }
+            }
+            
+            // Event ended but within 24 hours - users with GOING RSVP or attendance can access
+            now.isBefore(oneDayAfterEnd) -> {
+                if (hasGoingRsvp || hasAttended) {
+                    Log.d(TAG, "Access ALLOWED: Event ended <24h ago, user has GOING RSVP or attended")
+                    EventAccessStatus.ALLOWED
+                } else {
+                    Log.d(TAG, "Access DENIED: Event ended <24h ago, user didn't have GOING RSVP")
+                    EventAccessStatus.DENIED_PAST
+                }
+            }
+            
+            // Event ended more than 24 hours ago - only users who attended can access
+            else -> {
+                if (hasAttended) {
+                    Log.d(TAG, "Access ALLOWED: Event ended >24h ago, user attended")
+                    EventAccessStatus.ALLOWED
+                } else {
+                    Log.d(TAG, "Access DENIED: Event ended >24h ago, user didn't attend")
+                    EventAccessStatus.DENIED_PAST
+                }
             }
         }
     }
@@ -105,24 +237,35 @@ class EventDetailViewModel @Inject constructor(
     fun updateRSVP(status: RSVPStatus) {
         viewModelScope.launch {
             try {
-                val currentRSVP = _userRSVP.value
-                val newRSVP = if (currentRSVP != null) {
-                    currentRSVP.copy(status = status)
+                if (status == RSVPStatus.NOT_GOING) {
+                    _userRSVP.value?.let { rsvp ->
+                        rsvpRepository.deleteRSVP(rsvp)
+                    }
+                    _userRSVP.value = null
+                    RSVPStateManager.removeRSVPStatus(_currentUserId.value, eventId)
                 } else {
-                    RSVP(
-                        eventId = eventId,
-                        userId = _currentUserId.value,
-                        status = status
-                    )
+                    val currentRSVP = _userRSVP.value
+                    val newRSVP = if (currentRSVP != null) {
+                        RSVP.create(
+                            id = currentRSVP.id,
+                            eventId = eventId,
+                            userId = _currentUserId.value,
+                            status = status
+                        )
+                    } else {
+                        RSVP.create(
+                            eventId = eventId,
+                            userId = _currentUserId.value,
+                            status = status
+                        )
+                    }
+
+                    rsvpRepository.upsertRSVP(newRSVP)
+                    _userRSVP.value = newRSVP
+                    RSVPStateManager.updateRSVPStatus(_currentUserId.value, eventId, status)
                 }
-                
-                rsvpRepository.upsertRSVP(newRSVP)
-                _userRSVP.value = newRSVP
-                
-                // Update the shared RSVP state manager
-                RSVPStateManager.updateRSVPStatus(_currentUserId.value, eventId, status)
             } catch (e: Exception) {
-                // Handle error
+                _error.value = "Error al actualizar RSVP: ${e.message}"
             }
         }
     }
@@ -163,7 +306,7 @@ class EventDetailViewModel @Inject constructor(
                 )
                 
                 // Refresh attendance data
-                val attendees = attendanceRepository.getAttendeesWithDetails(eventId).first()
+                val attendees = attendanceRepository.getFullAttendeesWithDetails(eventId)
                 _attendees.value = attendees
                 
                 val attendanceCount = attendanceRepository.getAttendanceCountByEvent(eventId)
@@ -173,4 +316,4 @@ class EventDetailViewModel @Inject constructor(
             }
         }
     }
-} 
+}

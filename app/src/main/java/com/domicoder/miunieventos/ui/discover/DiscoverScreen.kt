@@ -83,6 +83,8 @@ fun DiscoverScreen(
     val selectedStartDate by viewModel.selectedStartDate.collectAsState()
     val selectedEndDate by viewModel.selectedEndDate.collectAsState()
     val showOnlySelectedEvents by viewModel.showOnlySelectedEvents.collectAsState()
+    val categoriesFromFirestore by viewModel.categories.collectAsState()
+    val departmentsFromFirestore by viewModel.departments.collectAsState()
     
     // Reset the "Solo Seleccionados" filter when user is not authenticated
     LaunchedEffect(isAuthenticated) {
@@ -129,11 +131,11 @@ fun DiscoverScreen(
         } else true
         
         val matchesStartDate = if (selectedStartDate != null) {
-            event.startDateTime.toLocalDate() >= selectedStartDate
+            event.startDateTimeLocal.toLocalDate() >= selectedStartDate
         } else true
         
         val matchesEndDate = if (selectedEndDate != null) {
-            event.startDateTime.toLocalDate() <= selectedEndDate
+            event.startDateTimeLocal.toLocalDate() <= selectedEndDate
         } else true
         
         // Filter for selected events (GOING status) when showOnlySelected is true and user is authenticated
@@ -141,31 +143,16 @@ fun DiscoverScreen(
             effectiveUserRsvpStates[event.id] == RSVPStatus.GOING
         } else true
         
-        matchesQuery && matchesCategory && matchesDepartment && matchesStartDate && matchesEndDate && matchesSelectedFilter
+        // Only show published events in Discover view
+        val isPublishedEvent = event.isPublished
+        
+        matchesQuery && matchesCategory && matchesDepartment && matchesStartDate && matchesEndDate && matchesSelectedFilter && isPublishedEvent
     }
     
     var searchActive by remember { mutableStateOf(false) }
-    
-    val categories = listOf(
-        stringResource(R.string.category_academic),
-        stringResource(R.string.category_cultural),
-        stringResource(R.string.category_sports),
-        stringResource(R.string.category_social),
-        stringResource(R.string.category_workshop),
-        stringResource(R.string.category_conference),
-        stringResource(R.string.category_other)
-    )
-    
-    val departments = listOf(
-        stringResource(R.string.department_software_engineering),
-        stringResource(R.string.department_social_sciences),
-        stringResource(R.string.department_medicine),
-        stringResource(R.string.department_arts),
-        stringResource(R.string.department_sports),
-        stringResource(R.string.department_student_association),
-        stringResource(R.string.department_computer_engineering),
-        stringResource(R.string.department_other)
-    )
+
+    val categories = categoriesFromFirestore.map { it.name }
+    val departments = departmentsFromFirestore.map { it.name }
     
     Column(modifier = Modifier.fillMaxSize()) {
         var isSearchExpanded by remember { mutableStateOf(false) }
@@ -529,6 +516,7 @@ fun DiscoverScreen(
                                 }
                             ) {
                                 DatePicker(
+                                    modifier = Modifier.padding(16.dp),
                                     state = startDatePickerState,
                                     title = { Text("Seleccionar fecha de inicio") }
                                 )
@@ -594,6 +582,7 @@ fun DiscoverScreen(
                                 }
                             ) {
                                 DatePicker(
+                                    modifier = Modifier.padding(16.dp),
                                     state = endDatePickerState,
                                     title = { Text("Seleccionar fecha de fin") }
                                 )
@@ -758,4 +747,4 @@ fun EventCardWithRSVPStatus(
             )
         }
     }
-} 
+}

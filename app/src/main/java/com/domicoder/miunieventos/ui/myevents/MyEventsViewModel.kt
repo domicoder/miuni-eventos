@@ -50,7 +50,7 @@ class MyEventsViewModel @Inject constructor(
                 eventRepository.getEventById(rsvp.eventId)?.let { event ->
                     EventWithRSVP(event, rsvp.status)
                 }
-            }.sortedBy { it.event.startDateTime }
+            }.sortedBy { it.event.startDateTimeLocal }
         }
     }.stateIn(
         scope = viewModelScope,

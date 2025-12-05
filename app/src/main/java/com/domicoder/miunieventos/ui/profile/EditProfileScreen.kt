@@ -1,6 +1,7 @@
 package com.domicoder.miunieventos.ui.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -56,6 +58,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.domicoder.miunieventos.ui.theme.BackgroundContrastColor
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,10 +72,11 @@ fun EditProfileScreen(
     val error by viewModel.error.collectAsState()
     val isUpdating by viewModel.isUpdating.collectAsState()
     val updateSuccess by viewModel.updateSuccess.collectAsState()
-    
+    val departmentsFromFirestore by viewModel.departments.collectAsState()
+
     var name by remember { mutableStateOf("") }
     var department by remember { mutableStateOf("") }
-    
+
     // Update local state when user data is loaded
     LaunchedEffect(user) {
         user?.let {
@@ -80,17 +84,8 @@ fun EditProfileScreen(
             department = it.department ?: ""
         }
     }
-    
-    val departments = listOf(
-        "Ingeniería Software",
-        "Ciencias Sociales", 
-        "Medicina",
-        "Artes",
-        "Deportes",
-        "Asociación Estudiantil",
-        "Ingeniería Informática",
-        "Otro"
-    )
+
+    val departments = departmentsFromFirestore.map { it.name }
     
     fun handleSave() {
         if (name.isNotBlank() && department.isNotBlank()) {
@@ -184,7 +179,7 @@ fun EditProfileScreen(
                 ) {
                     Column(
                         modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.Start
                     ) {
                         Box(
                             modifier = Modifier
@@ -192,27 +187,45 @@ fun EditProfileScreen(
                                 .clip(CircleShape)
                                 .background(MaterialTheme.colorScheme.primaryContainer)
                         ) {
-                            AsyncImage(
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data(user?.photoUrl)
-                                    .crossfade(true)
-                                    .build(),
-                                contentDescription = "Profile Photo",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
+                            if (!user?.photoUrl.isNullOrEmpty()) {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(LocalContext.current)
+                                        .data(user?.photoUrl)
+                                        .crossfade(true)
+                                        .build(),
+                                    contentDescription = "Profile Photo",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier
+                                        .size(120.dp)
+                                        .clip(CircleShape)
+                                        .background(BackgroundContrastColor)
+                                        .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Person,
+                                        contentDescription = "Avatar",
+                                        modifier = Modifier.size(80.dp),
+                                        tint = MaterialTheme.colorScheme.background
+                                    )
+                                }
+                            }
                         }
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         
                         Text(
-                            text = "Foto de Perfil",
+                            text = "UNIVERSIDAD",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Medium
                         )
-                        
+
                         Text(
-                            text = "La foto se mantiene igual",
+                            text = "UNICDA",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -333,7 +346,7 @@ fun EditProfileScreen(
                                 )
                             } else {
                                 Icon(
-                                    imageVector = Icons.Default.Edit,
+                                    imageVector = Icons.Default.Save,
                                     contentDescription = null,
                                     modifier = Modifier.size(20.dp)
                                 )

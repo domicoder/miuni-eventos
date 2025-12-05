@@ -1,7 +1,7 @@
 package com.domicoder.miunieventos
 
 import android.app.Application
-import com.domicoder.miunieventos.data.local.DatabaseInitializer
+import com.domicoder.miunieventos.data.repository.FirestoreInitializer
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -12,13 +12,13 @@ import javax.inject.Inject
 class MiUNIEventosApp : Application() {
     
     @Inject
-    lateinit var databaseInitializer: DatabaseInitializer
+    lateinit var firestoreInitializer: FirestoreInitializer
     
     override fun onCreate() {
         super.onCreate()
-        // Initialize database with initial data
+        // Initialize Firestore with initial data
         CoroutineScope(Dispatchers.IO).launch {
-            databaseInitializer.initializeDatabase()
+            firestoreInitializer.initializeDatabase()
         }
     }
-} 
+}

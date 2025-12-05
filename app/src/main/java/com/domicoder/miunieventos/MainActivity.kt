@@ -51,8 +51,11 @@ class MainActivity : ComponentActivity() {
         }
     }
     
-    override fun onNewIntent(intent: Intent?) {
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        // Update the activity's intent to the new one
+        setIntent(intent)
+        Log.d(TAG, "onNewIntent called - handling deep link for running app")
         // Handle deep links when app is already running
         handleDeepLink(intent)
     }

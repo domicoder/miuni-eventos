@@ -2,6 +2,31 @@
 
 A modern Android app for university event management and discovery, built with Jetpack Compose and modern Android development practices.
 
+> **First time setup?** See the [Complete Setup Guide](SETUP.md) for detailed instructions.
+
+## Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/domicoder/miuni-eventos.git
+cd miuni-eventos
+
+# Check setup (will tell you what's missing)
+make setup
+
+# Or without make:
+./scripts/setup.sh
+```
+
+**Required files you need to create:**
+
+-   `app/google-services.json` - [Get from Firebase Console](https://console.firebase.google.com/)
+-   `local.properties` with `MAPS_API_KEY` - [Get from Google Cloud Console](https://console.cloud.google.com/)
+
+For detailed instructions, see **[SETUP.md](SETUP.md)**.
+
+---
+
 ## Overview
 
 MiUNIEventos helps university students and staff discover, manage, and participate in campus events. The app provides a seamless experience for both event organizers and attendees, featuring real-time updates, QR code scanning for attendance tracking, and integrated maps for event locations.
@@ -142,6 +167,29 @@ app/src/main/java/com/domicoder/miunieventos/
 
     Or open the project in Android Studio and run it on an emulator or device.
 
+5. **Clean and rebuild**
+
+    ```bash
+      ./gradlew --stop
+      ./gradlew clean assembleDebug
+      # or
+      ./gradlew clean build
+    ```
+
+6. **Deploy firebase rules**
+
+    ```bash
+      firebase deploy --only firestore
+      firebase deploy --only storage
+    ```
+
+7. **Deploy firebase hosting**
+
+    ```bash
+      firebase use miuni-eventos
+      firebase deploy
+    ```
+
 ### Environment Configuration
 
 The project uses the following key configurations:
@@ -219,4 +267,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-Built with ❤️ for university communities
+Built for university communities

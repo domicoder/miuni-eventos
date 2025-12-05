@@ -1,7 +1,8 @@
 package com.domicoder.miunieventos.ui.login
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,16 +24,19 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.Checkbox
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -43,13 +47,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.domicoder.miunieventos.R
 import com.domicoder.miunieventos.data.repository.AuthResult
@@ -57,29 +65,56 @@ import com.domicoder.miunieventos.data.repository.AuthResult
 @Composable
 fun LoginScreen(
     onLoginSuccess: (String, Boolean) -> Unit,
+    onRegisterRequest: (() -> Unit)? = null,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
-    var email by remember { mutableStateOf("juanito.alimana@unicda.edu.do") }
-    var password by remember { mutableStateOf("123456") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
-    var showCreateAccount by remember { mutableStateOf(false) }
     var rememberMe by remember { mutableStateOf(true) }
+    
+    val context = LocalContext.current
+    val activity = context as? Activity
     
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     val authResult by viewModel.authResult.collectAsState()
+    val googleSignInIntent by viewModel.googleSignInIntent.collectAsState()
     
-    // Handle authentication result
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        android.util.Log.d("LoginScreen", "Google Sign-In result received, resultCode: ${result.resultCode}")
+        if (result.resultCode == Activity.RESULT_OK) {
+            android.util.Log.d("LoginScreen", "Result OK, processing Google Sign-In result")
+            viewModel.handleGoogleSignInResult(result.data)
+        } else {
+            android.util.Log.w("LoginScreen", "Result not OK, user may have cancelled")
+            viewModel.setError("El inicio de sesión con Google fue cancelado")
+        }
+    }
+    
+    LaunchedEffect(googleSignInIntent) {
+        googleSignInIntent?.let { intent ->
+            android.util.Log.d("LoginScreen", "Launching Google Sign-In intent")
+            googleSignInLauncher.launch(intent)
+            viewModel.clearGoogleSignInIntent()
+        }
+    }
+    
     LaunchedEffect(authResult) {
         authResult?.let { result ->
+            android.util.Log.d("LoginScreen", "authResult changed: ${result.javaClass.simpleName}")
             when (result) {
                 is AuthResult.Success -> {
-                    // Call the onLoginSuccess callback to notify the parent with user ID and remember me preference
-                    onLoginSuccess(result.user.id, rememberMe)
+                    android.util.Log.d("LoginScreen", "AuthResult.Success detected, user ID: ${result.user.id}")
                     viewModel.clearAuthResult()
+                    android.util.Log.d("LoginScreen", "Calling onLoginSuccess")
+                    onLoginSuccess(result.user.id, rememberMe)
+                    android.util.Log.d("LoginScreen", "onLoginSuccess called")
                 }
                 is AuthResult.Error -> {
-                    // Error is already handled in the ViewModel
+                    android.util.Log.e("LoginScreen", "AuthResult.Error: ${result.message}")
                 }
             }
         }
@@ -88,246 +123,271 @@ fun LoginScreen(
     fun handleLogin() {
         if (email.isNotBlank() && password.isNotBlank()) {
             viewModel.login(email, password, rememberMe)
-        } else {
-            // This will be handled by the ViewModel
         }
     }
     
-    fun handleCreateAccount() {
-        if (email.isNotBlank() && password.isNotBlank()) {
-            val name = email.split("@")[0].replace(".", " ").replace("_", " ")
-            val department = "Departamento"
-            viewModel.createAccount(email, password, name, department, rememberMe)
-        } else {
-            // This will be handled by the ViewModel
+    fun handleGoogleSignIn() {
+        android.util.Log.d("LoginScreen", "handleGoogleSignIn called")
+        if (activity == null) {
+            android.util.Log.e("LoginScreen", "Activity is null!")
+            viewModel.setError("No se pudo iniciar Google Sign-In: Activity es null")
+            return
         }
+        android.util.Log.d("LoginScreen", "Activity found, starting Google Sign-In")
+        viewModel.startGoogleSignIn(activity)
     }
+    
+    val colorScheme = MaterialTheme.colorScheme
     
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .background(MaterialTheme.colorScheme.surface),
+            .background(colorScheme.background),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Header
-        Box(
+        Spacer(modifier = Modifier.height(60.dp))
+        
+        // Header Section
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(horizontal = 32.dp)
+        ) {
+            Text(
+                text = "Iniciar Sesión",
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.Bold,
+                color = colorScheme.primary,
+                fontSize = 32.sp
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Text(
+                text = "¡Bienvenido de nuevo, te extrañamos!",
+                style = MaterialTheme.typography.bodyLarge,
+                color = colorScheme.onSurface,
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(40.dp))
+        
+        // Input Fields
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
-                .background(
-                    MaterialTheme.colorScheme.primary,
-                    RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
-                ),
-            contentAlignment = Alignment.Center
+                .padding(horizontal = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(top = 32.dp) // Add top padding to avoid notch
+            // Email Field
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Correo electrónico") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = colorScheme.primary,
+                    unfocusedBorderColor = colorScheme.outline,
+                    focusedContainerColor = colorScheme.surface,
+                    unfocusedContainerColor = colorScheme.surface
+                ),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next
+                ),
+                singleLine = true
+            )
+            
+            // Password Field
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Contraseña") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = colorScheme.outline,
+                    unfocusedBorderColor = colorScheme.outline,
+                    focusedContainerColor = colorScheme.surface,
+                    unfocusedContainerColor = colorScheme.surface
+                ),
+                trailingIcon = {
+                    IconButton(onClick = { showPassword = !showPassword }) {
+                        Icon(
+                            imageVector = if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = if (showPassword) "Ocultar contraseña" else "Mostrar contraseña",
+                            tint = colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done
+                ),
+                singleLine = true
+            )
+            
+            // Forgot Password Link
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                    contentDescription = "App Logo",
-                    modifier = Modifier.size(80.dp)
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
                 Text(
-                    text = "MiUNIEventos",
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
+                    text = "¿Olvidaste tu contraseña?",
+                    color = colorScheme.primary,
+                    fontSize = 14.sp,
+                    modifier = Modifier.clickable {
+                    }
                 )
-                
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        // Sign In Button
+        Button(
+            onClick = { handleLogin() },
+            modifier = Modifier
+                .fillMaxWidth(0.85f)
+                .height(56.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colorScheme.primary
+            )
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = colorScheme.onPrimary
+                )
+            } else {
                 Text(
-                    text = "Inicia sesión para continuar",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White.copy(alpha = 0.8f)
+                    text = "Iniciar sesión",
+                    color = colorScheme.onPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Create New Account
+        Button(
+            onClick = { onRegisterRequest?.invoke() },
+            modifier = Modifier
+                .fillMaxWidth(0.85f)
+                .height(56.dp)
+                .border(1.dp, colorScheme.primary, RoundedCornerShape(12.dp)),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colorScheme.background
+            )
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = colorScheme.onPrimary
+                )
+            } else {
+                Text(
+                    text = "Crear cuenta",
+                    color = colorScheme.secondary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
                 )
             }
         }
         
         Spacer(modifier = Modifier.height(32.dp))
         
-        // Login Form
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
-            shape = RoundedCornerShape(16.dp)
+        Text(
+            text = "O continúa con",
+            color = colorScheme.primary,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Social Login Buttons
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                modifier = Modifier.padding(24.dp)
-            ) {
-                Text(
-                    text = "Iniciar Sesión",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                // Email Field
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Correo Electrónico") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Email,
-                            contentDescription = "Email"
-                        )
-                    },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email,
-                        imeAction = ImeAction.Next
-                    ),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Password Field
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Contraseña") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = "Password"
-                        )
-                    },
-                    trailingIcon = {
-                        IconButton(onClick = { showPassword = !showPassword }) {
-                            Icon(
-                                imageVector = if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = if (showPassword) "Hide password" else "Show password"
-                            )
-                        }
-                    },
-                    visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Done
-                    ),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Remember Me checkbox
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Checkbox(
-                        checked = rememberMe,
-                        onCheckedChange = { rememberMe = it }
-                    )
-                    Text(
-                        text = "Recordar sesión",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                // Login Button
-                Button(
-                    onClick = { handleLogin() },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    enabled = !isLoading && email.isNotBlank() && password.isNotBlank()
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Default.Email,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.width(8.dp))
-                    
-                    Text(
-                        text = if (isLoading) "Iniciando..." else "Iniciar Sesión",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-                
-                // Error Message
-                if (error != null) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    Text(
-                        text = error ?: "",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Create Account Button
-                TextButton(
-                    onClick = { showCreateAccount = !showCreateAccount },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = if (showCreateAccount) "Ya tengo cuenta" else "Crear cuenta",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-                
-                // Create Account Form
-                if (showCreateAccount) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    Button(
-                        onClick = { handleCreateAccount() },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        enabled = !isLoading && email.isNotBlank() && password.isNotBlank()
-                    ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Email,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        
-                        Spacer(modifier = Modifier.width(8.dp))
-                        
-                        Text(
-                            text = if (isLoading) "Creando..." else "Crear Cuenta",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-                
-                // Test Account Info (for MVP)
-                Spacer(modifier = Modifier.height(24.dp))
-            }
+            val googleIcon = ImageVector.vectorResource(id = R.drawable.google_logo)
+            val microsoftIcon = ImageVector.vectorResource(id = R.drawable.microsoft_logo)
+
+            // Google Button
+            SocialLoginButton(
+                text = "G",
+                imageVector = googleIcon,
+                onClick = {
+                    handleGoogleSignIn()
+                },
+                modifier = Modifier.padding(end = 12.dp)
+            )
+            
+            // Microsoft Button
+            SocialLoginButton(
+                text = "M",
+                imageVector = microsoftIcon,
+                onClick = {
+                    viewModel.signInWithMicrosoft()
+                },
+                modifier = Modifier.padding(start = 12.dp)
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Error Message
+        if (error != null) {
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+        
+        Spacer(modifier = Modifier.height(32.dp))
+    }
+}
+
+@Composable
+fun SocialLoginButton(
+    text: String,
+    imageVector: ImageVector? = null,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    
+    Box(
+        modifier = modifier
+            .size(56.dp)
+            .background(
+                color = colorScheme.surface,
+                shape = RoundedCornerShape(12.dp)
+            )
+            .border(1.dp, colorScheme.outline, RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        if (imageVector != null) {
+            Image(
+                imageVector = imageVector,
+                contentDescription = "Login with $text",
+                modifier = Modifier.size(24.dp)
+            )
+        } else {
+            Text(
+                text = text,
+                color = colorScheme.onSurface,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
         }
     }
 }

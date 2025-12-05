@@ -1,0 +1,18 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Event images - authenticated users can upload
+    // TODO: Change to request.auth.token.organizer == true after Cloud Functions are deployed
+    match /events/{imageFile} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    // User profile images - users can manage their own
+    match /users/{userId}/{imageFile} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
